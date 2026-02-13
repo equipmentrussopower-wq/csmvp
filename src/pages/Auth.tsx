@@ -29,7 +29,7 @@ const Auth = () => {
         if (error) throw error;
         navigate("/dashboard");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -38,11 +38,25 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+
+        // Update profile with phone and address if provided
+        if (signUpData.user) {
+          const updates: { phone?: string; address?: string } = {};
+          if (phone) updates.phone = phone;
+          if (address) updates.address = address;
+          if (Object.keys(updates).length > 0) {
+            await supabase
+              .from("profiles")
+              .update(updates)
+              .eq("user_id", signUpData.user.id);
+          }
+        }
+
         toast({
           title: "Account created",
-          description: "Please check your email to verify your account before signing in.",
+          description: "You can now sign in to your account.",
         });
-        setIsLogin(true);
+        navigate("/dashboard");
       }
     } catch (error: any) {
       toast({
