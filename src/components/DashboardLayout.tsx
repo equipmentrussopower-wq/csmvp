@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2, LayoutDashboard, ArrowLeftRight, CreditCard, Shield, LogOut, User } from "lucide-react";
+import { Building2, LayoutDashboard, ArrowLeftRight, CreditCard, Shield, LogOut, User, History, Settings, HelpCircle, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +8,10 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/accounts", label: "Accounts", icon: CreditCard },
   { href: "/transfer", label: "Transfer", icon: ArrowLeftRight },
+  { href: "/transactions", label: "Transaction History", icon: History },
+  { href: "/notifications", label: "Notifications", icon: Bell },
+  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/help", label: "Help & Support", icon: HelpCircle },
 ];
 
 const adminItems = [
