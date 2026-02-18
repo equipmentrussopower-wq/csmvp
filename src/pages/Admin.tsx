@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Users, CreditCard, ArrowLeftRight, RotateCcw, Snowflake, DollarSign } from "lucide-react";
+import { Shield, Users, CreditCard, ArrowLeftRight, RotateCcw, Snowflake, DollarSign, CheckCircle, XCircle, FileText, Eye, Info } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 const Admin = () => {
@@ -19,6 +19,7 @@ const Admin = () => {
   const [profiles, setProfiles] = useState<Tables<"profiles">[]>([]);
   const [accounts, setAccounts] = useState<Tables<"accounts">[]>([]);
   const [transactions, setTransactions] = useState<Tables<"transactions">[]>([]);
+  const [kycSubmissions, setKycSubmissions] = useState<Tables<"kyc_submissions">[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Adjust balance state
@@ -28,14 +29,16 @@ const Admin = () => {
   const [adjustNarration, setAdjustNarration] = useState("");
 
   const fetchAll = async () => {
-    const [p, a, t] = await Promise.all([
+    const [p, a, t, k] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("accounts").select("*").order("created_at", { ascending: false }),
       supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("kyc_submissions").select("*").order("submitted_at", { ascending: false }),
     ]);
     setProfiles(p.data ?? []);
     setAccounts(a.data ?? []);
     setTransactions(t.data ?? []);
+    setKycSubmissions(k.data ?? []);
     setLoading(false);
   };
 
@@ -81,6 +84,28 @@ const Admin = () => {
     }
   };
 
+  const handleApproveKyc = async (userId: string) => {
+    const { error } = await supabase.rpc("admin_approve_kyc", { p_user_id: userId });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "KYC Approved", description: "User accounts have been created." });
+      fetchAll();
+    }
+  };
+
+  const handleRejectKyc = async (userId: string) => {
+    const reason = window.prompt("Reason for rejection:");
+    if (reason === null) return;
+    const { error } = await supabase.rpc("admin_reject_kyc", { p_user_id: userId, p_reason: reason });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "KYC Rejected", description: "Submission marked as rejected." });
+      fetchAll();
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -105,6 +130,7 @@ const Admin = () => {
         <Tabs defaultValue="customers">
           <TabsList>
             <TabsTrigger value="customers" className="gap-1"><Users className="h-4 w-4" />Customers</TabsTrigger>
+            <TabsTrigger value="kyc" className="gap-1"><FileText className="h-4 w-4" />KYC Submissions</TabsTrigger>
             <TabsTrigger value="accounts" className="gap-1"><CreditCard className="h-4 w-4" />Accounts</TabsTrigger>
             <TabsTrigger value="transactions" className="gap-1"><ArrowLeftRight className="h-4 w-4" />Transactions</TabsTrigger>
           </TabsList>
@@ -130,6 +156,130 @@ const Admin = () => {
                         <TableCell>{p.phone || "—"}</TableCell>
                         <TableCell>{p.address || "—"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* KYC Tab */}
+          <TabsContent value="kyc">
+            <Card>
+              <CardHeader><CardTitle>Pending KYC Reviews</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>ID Type</TableHead>
+                      <TableHead>ID Number</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {kycSubmissions.length === 0 ? (
+                      <TableRow><TableCell colSpan={6} className="text-center py-4">No submissions found.</TableCell></TableRow>
+                    ) : kycSubmissions.map((k) => (
+                      <TableRow key={k.id}>
+                        <TableCell className="font-medium">{k.full_name}</TableCell>
+                        <TableCell className="capitalize">{k.id_type.replace("_", " ")}</TableCell>
+                        <TableCell className="font-mono">{k.id_number}</TableCell>
+                        <TableCell>
+                          <Badge variant={k.status === "approved" ? "default" : k.status === "rejected" ? "destructive" : "secondary"}>
+                            {k.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{new Date(k.submitted_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                  <Eye className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>KYC Details — {k.full_name}</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <p className="text-muted-foreground font-medium">Full Legal Name</p>
+                                      <p className="font-semibold">{k.full_name}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-muted-foreground font-medium">Date of Birth</p>
+                                      <p>{new Date(k.date_of_birth).toLocaleDateString()}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-muted-foreground font-medium">Phone Number</p>
+                                      <p>{k.phone}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-muted-foreground font-medium">ID Type</p>
+                                      <p className="capitalize">{k.id_type.replace("_", " ")}</p>
+                                    </div>
+                                    <div className="col-span-2">
+                                      <p className="text-muted-foreground font-medium">Residential Address</p>
+                                      <p>{k.address}</p>
+                                    </div>
+                                    <div className="col-span-2">
+                                      <p className="text-muted-foreground font-medium">ID Number</p>
+                                      <p className="font-mono bg-gray-50 p-2 rounded border">{k.id_number}</p>
+                                    </div>
+                                    {k.id_image_url && (
+                                      <div className="col-span-2">
+                                        <p className="text-muted-foreground font-medium mb-2">Identity Document Image</p>
+                                        <div className="rounded-lg border overflow-hidden bg-gray-50">
+                                          <img
+                                            src={k.id_image_url}
+                                            alt="Identity Document"
+                                            className="w-full h-auto max-h-60 object-contain hover:scale-105 transition-transform cursor-zoom-in"
+                                            onClick={() => window.open(k.id_image_url, '_blank')}
+                                          />
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-1">Click image to view full size</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2 pt-4 border-t">
+                                    {k.status === "pending" ? (
+                                      <>
+                                        <Button className="flex-1" onClick={() => handleApproveKyc(k.user_id)}>
+                                          Approve Submission
+                                        </Button>
+                                        <Button variant="destructive" onClick={() => handleRejectKyc(k.user_id)}>
+                                          Reject
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                        <Info className="h-4 w-4" />
+                                        This submission is already {k.status}.
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+
+                            {k.status === "pending" && (
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => handleApproveKyc(k.user_id)}>
+                                  <CheckCircle className="h-3 w-3 mr-1" /> Approve
+                                </Button>
+                                <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleRejectKyc(k.user_id)}>
+                                  <XCircle className="h-3 w-3 mr-1" /> Reject
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

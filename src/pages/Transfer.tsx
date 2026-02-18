@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Send, ShieldCheck, Loader2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
-type TransferStep = "details" | "otp";
+type TransferStep = "details" | "pin";
 
 const Transfer = () => {
   const { user, session } = useAuth();
@@ -25,8 +25,15 @@ const Transfer = () => {
   const [narration, setNarration] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<TransferStep>("details");
-  const [otpCode, setOtpCode] = useState("");
-  const [demoOtp, setDemoOtp] = useState("");
+  const [pin, setPin] = useState("");
+
+  async function hashPin(pin: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pin + "chase_salt_2026");
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -38,7 +45,7 @@ const Transfer = () => {
       .then(({ data }) => setAccounts(data ?? []));
   }, [user]);
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
+  const handleProceedToPin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -59,21 +66,7 @@ const Transfer = () => {
       }
 
       setReceiverAccountId(receiver.id);
-
-      // Request OTP
-      const { data, error } = await supabase.functions.invoke("send-otp", {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      });
-
-      if (error) throw new Error("Failed to send OTP. Please try again.");
-
-      // For demo purposes, show the OTP
-      if (data?.demo_otp) {
-        setDemoOtp(data.demo_otp);
-      }
-
-      setStep("otp");
-      toast({ title: "OTP Sent", description: "A verification code has been sent to your email." });
+      setStep("pin");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -82,34 +75,29 @@ const Transfer = () => {
   };
 
   const handleVerifyAndTransfer = async () => {
-    if (otpCode.length !== 6) return;
+    if (pin.length !== 4) return;
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("verify-otp", {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-        body: {
-          code: otpCode,
-          sender_account_id: senderAccountId,
-          receiver_account_id: receiverAccountId,
-          amount: parseFloat(amount),
-          narration: narration || null,
-        },
+      const pinHash = await hashPin(pin);
+      const { data, error } = await supabase.rpc("transfer_with_pin", {
+        p_sender_account_id: senderAccountId,
+        p_receiver_account_id: receiverAccountId,
+        p_amount: parseFloat(amount),
+        p_pin_hash: pinHash,
+        p_narration: narration || null,
       });
 
-      if (error || data?.error) {
-        throw new Error(data?.error || "Verification failed. Please try again.");
-      }
+      if (error) throw error;
 
       toast({ title: "Transfer Successful", description: `$${parseFloat(amount).toFixed(2)} sent successfully.` });
-      
+
       // Reset form
       setAmount("");
       setNarration("");
       setReceiverAccountNumber("");
       setReceiverAccountId("");
-      setOtpCode("");
-      setDemoOtp("");
+      setPin("");
       setStep("details");
 
       // Refresh accounts
@@ -140,7 +128,7 @@ const Transfer = () => {
               <CardDescription>All transfers require OTP verification for security.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleRequestOtp} className="space-y-4">
+              <form onSubmit={handleProceedToPin} className="space-y-4">
                 <div className="space-y-2">
                   <Label>From Account</Label>
                   <Select value={senderAccountId} onValueChange={setSenderAccountId}>
@@ -200,7 +188,7 @@ const Transfer = () => {
                       Sending OTP...
                     </>
                   ) : (
-                    "Continue & Verify"
+                    "Continue"
                   )}
                 </Button>
               </form>
@@ -208,34 +196,25 @@ const Transfer = () => {
           </Card>
         )}
 
-        {step === "otp" && (
+        {step === "pin" && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5" />
-                Verify Transfer
+                Authorize Transfer
               </CardTitle>
               <CardDescription>
-                Enter the 6-digit code sent to your email to confirm this transfer of ${parseFloat(amount).toFixed(2)}.
+                Enter your 4-digit PIN to confirm this transfer of ${parseFloat(amount).toFixed(2)}.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {demoOtp && (
-                <div className="bg-muted border border-border rounded-md p-3 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Demo OTP (for testing)</p>
-                  <p className="text-2xl font-mono font-bold tracking-widest text-primary">{demoOtp}</p>
-                </div>
-              )}
-
               <div className="flex justify-center">
-                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                <InputOTP maxLength={4} value={pin} onChange={setPin}>
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
                     <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
                   </InputOTPGroup>
                 </InputOTP>
               </div>
@@ -246,8 +225,7 @@ const Transfer = () => {
                   className="flex-1"
                   onClick={() => {
                     setStep("details");
-                    setOtpCode("");
-                    setDemoOtp("");
+                    setPin("");
                   }}
                 >
                   Back
@@ -255,7 +233,7 @@ const Transfer = () => {
                 <Button
                   className="flex-1"
                   onClick={handleVerifyAndTransfer}
-                  disabled={loading || otpCode.length !== 6}
+                  disabled={loading || pin.length !== 4}
                 >
                   {loading ? (
                     <>

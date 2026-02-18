@@ -6,18 +6,22 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: { full_name: string; phone: string | null; address: string | null } | null;
+  kycStatus: "pending" | "approved" | "rejected" | "none";
   isAdmin: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
+  refreshAuth: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   profile: null,
+  kycStatus: "none",
   isAdmin: false,
   isLoading: true,
-  signOut: async () => {},
+  signOut: async () => { },
+  refreshAuth: async () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -26,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
+  const [kycStatus, setKycStatus] = useState<AuthContextType["kycStatus"]>("none");
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,9 +43,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(data);
   };
 
+  const checkKyc = async (userId: string) => {
+    const { data } = await supabase
+      .from("kyc_submissions")
+      .select("status")
+      .eq("user_id", userId)
+      .maybeSingle();
+    setKycStatus(data?.status ?? "none");
+  };
+
   const checkAdmin = async (userId: string) => {
     const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
     setIsAdmin(!!data);
+  };
+
+  const refreshAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await Promise.all([
+        fetchProfile(session.user.id),
+        checkAdmin(session.user.id),
+        checkKyc(session.user.id)
+      ]);
+    }
   };
 
   useEffect(() => {
@@ -49,13 +74,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-          checkAdmin(session.user.id);
-        }, 0);
+        fetchProfile(session.user.id);
+        checkAdmin(session.user.id);
+        checkKyc(session.user.id);
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setKycStatus("none");
       }
       setIsLoading(false);
     });
@@ -66,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         fetchProfile(session.user.id);
         checkAdmin(session.user.id);
+        checkKyc(session.user.id);
       }
       setIsLoading(false);
     });
@@ -78,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, isAdmin, isLoading, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, kycStatus, isAdmin, isLoading, signOut, refreshAuth }}>
       {children}
     </AuthContext.Provider>
   );

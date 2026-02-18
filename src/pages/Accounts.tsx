@@ -6,13 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
 const Accounts = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [accounts, setAccounts] = useState<Tables<"accounts">[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,17 +26,6 @@ const Accounts = () => {
 
   useEffect(() => { fetchAccounts(); }, [user]);
 
-  const createAccount = async (type: "savings" | "current") => {
-    if (!user) return;
-    const { error } = await supabase.from("accounts").insert({ user_id: user.id, account_type: type, account_number: "" });
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Account Created", description: `New ${type} account opened successfully.` });
-      fetchAccounts();
-    }
-  };
-
   if (loading) {
     return (
       <DashboardLayout>
@@ -53,21 +39,9 @@ const Accounts = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Accounts</h1>
-            <p className="text-muted-foreground mt-1">Manage your bank accounts</p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => createAccount("savings")}>
-              <Plus className="h-4 w-4 mr-1" />
-              Savings
-            </Button>
-            <Button variant="outline" onClick={() => createAccount("current")}>
-              <Plus className="h-4 w-4 mr-1" />
-              Current
-            </Button>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold">Accounts</h1>
+          <p className="text-muted-foreground mt-1">Your bank accounts</p>
         </div>
 
         <Card>
@@ -76,7 +50,7 @@ const Accounts = () => {
           </CardHeader>
           <CardContent>
             {accounts.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">No accounts. Create one above.</p>
+              <p className="text-center py-8 text-muted-foreground">Your accounts are being set up. Please check back shortly.</p>
             ) : (
               <Table>
                 <TableHeader>

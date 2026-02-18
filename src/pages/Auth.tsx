@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Building2 } from "lucide-react";
+import ChaseLogo from "@/components/ChaseLogo";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -72,11 +72,10 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12">
-        <div className="text-primary-foreground max-w-md">
-          <div className="flex items-center gap-3 mb-8">
-            <Building2 className="h-12 w-12" />
-            <h1 className="text-4xl font-bold">EduBank</h1>
+      <div className="hidden lg:flex lg:w-1/2 bg-[#117ACA] items-center justify-center p-12">
+        <div className="text-white max-w-md">
+          <div className="mb-8">
+            <ChaseLogo className="h-14 w-auto text-white" />
           </div>
           <p className="text-xl opacity-90 leading-relaxed">
             Your trusted digital banking portal. Manage your accounts, transfer funds, and monitor
@@ -89,13 +88,12 @@ const Auth = () => {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-8 bg-background">
         <Card className="w-full max-w-md shadow-lg border-border">
           <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2 lg:hidden">
-              <Building2 className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-primary">EduBank</span>
+            <div className="flex items-center justify-center mb-4 lg:hidden">
+              <ChaseLogo className="h-8 w-auto text-gray-900" />
             </div>
             <CardTitle className="text-2xl">{isLogin ? "Welcome Back" : "Create Account"}</CardTitle>
             <CardDescription>
-              {isLogin ? "Sign in to access your banking portal" : "Open your EduBank account today"}
+              {isLogin ? "Sign in to access your online banking portal" : "Open your Chase account today"}
             </CardDescription>
           </CardHeader>
           <CardContent>

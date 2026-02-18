@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
-import { Plus, ArrowUpRight, ArrowDownLeft, Wallet } from "lucide-react";
+import { ArrowUpRight, Wallet } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 const Dashboard = () => {
@@ -34,12 +34,7 @@ const Dashboard = () => {
 
   const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
 
-  const createAccount = async (type: "savings" | "current") => {
-    if (!user) return;
-    await supabase.from("accounts").insert({ user_id: user.id, account_type: type, account_number: "" });
-    const { data } = await supabase.from("accounts").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-    setAccounts(data ?? []);
-  };
+
 
   if (loading) {
     return (
@@ -94,10 +89,6 @@ const Dashboard = () => {
                 <ArrowUpRight className="h-4 w-4 mr-1" />
                 Transfer
               </Button>
-              <Button size="sm" variant="outline" onClick={() => createAccount("savings")}>
-                <Plus className="h-4 w-4 mr-1" />
-                New Account
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -113,11 +104,7 @@ const Dashboard = () => {
           <CardContent>
             {accounts.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No accounts yet.</p>
-                <div className="flex gap-2 justify-center mt-4">
-                  <Button onClick={() => createAccount("savings")}>Create Savings Account</Button>
-                  <Button variant="outline" onClick={() => createAccount("current")}>Create Current Account</Button>
-                </div>
+                <p>Your accounts are being set up. Please refresh in a moment.</p>
               </div>
             ) : (
               <Table>
