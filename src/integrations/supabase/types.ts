@@ -188,6 +188,7 @@ export type Database = {
           submitted_at: string
           reviewed_at: string | null
           reviewed_by: string | null
+          id_image_url: string | null
         }
         Insert: {
           id?: string
@@ -203,6 +204,7 @@ export type Database = {
           submitted_at?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          id_image_url?: string | null
         }
         Update: {
           id?: string
@@ -218,6 +220,7 @@ export type Database = {
           submitted_at?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          id_image_url?: string | null
         }
         Relationships: []
       }
@@ -242,6 +245,36 @@ export type Database = {
           pin_hash?: string
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          title?: string
+          type?: string
+          user_id?: string | null
         }
         Relationships: []
       }

@@ -12,6 +12,7 @@ import Transfer from "./pages/Transfer";
 import Admin from "./pages/Admin";
 import KYC from "./pages/KYC";
 import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
 import Transactions from "./pages/Transactions";
 import { Notifications, Help } from "./pages/Placeholders";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
             <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

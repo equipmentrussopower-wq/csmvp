@@ -5,7 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 type AuthContextType = {
   session: Session | null;
   user: User | null;
-  profile: { full_name: string; phone: string | null; address: string | null } | null;
+  profile: {
+    user_id: any;
+    user_id: any; full_name: string; phone: string | null; address: string | null 
+} | null;
   kycStatus: "pending" | "approved" | "rejected" | "none";
   isAdmin: boolean;
   isLoading: boolean;

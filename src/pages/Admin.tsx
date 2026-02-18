@@ -11,8 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Users, CreditCard, ArrowLeftRight, RotateCcw, Snowflake, DollarSign, CheckCircle, XCircle, FileText, Eye, Info } from "lucide-react";
-import type { Tables } from "@/integrations/supabase/types";
+import { Shield, Users, CreditCard, ArrowLeftRight, RotateCcw, Snowflake, DollarSign, CheckCircle, XCircle, FileText, Eye, Info, PlusCircle, Bell, Send, Trash2, Megaphone } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 const Admin = () => {
   const { toast } = useToast();
@@ -20,25 +21,36 @@ const Admin = () => {
   const [accounts, setAccounts] = useState<Tables<"accounts">[]>([]);
   const [transactions, setTransactions] = useState<Tables<"transactions">[]>([]);
   const [kycSubmissions, setKycSubmissions] = useState<Tables<"kyc_submissions">[]>([]);
+  const [notifications, setNotifications] = useState<Tables<"notifications">[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Notification form state
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifBody, setNotifBody] = useState("");
+  const [notifType, setNotifType] = useState<"info" | "success" | "warning" | "alert">("info");
+  const [notifTarget, setNotifTarget] = useState("all"); // "all" or a user_id
+  const [notifSending, setNotifSending] = useState(false);
 
   // Adjust balance state
   const [adjustAccountId, setAdjustAccountId] = useState("");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustType, setAdjustType] = useState<"deposit" | "withdrawal">("deposit");
   const [adjustNarration, setAdjustNarration] = useState("");
+  const [selectedUserForMock, setSelectedUserForMock] = useState<Tables<"profiles"> | null>(null);
 
   const fetchAll = async () => {
-    const [p, a, t, k] = await Promise.all([
+    const [p, a, t, k, n] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("accounts").select("*").order("created_at", { ascending: false }),
       supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("kyc_submissions").select("*").order("submitted_at", { ascending: false }),
+      supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(100),
     ]);
     setProfiles(p.data ?? []);
     setAccounts(a.data ?? []);
     setTransactions(t.data ?? []);
     setKycSubmissions(k.data ?? []);
+    setNotifications(n.data ?? []);
     setLoading(false);
   };
 
@@ -106,6 +118,37 @@ const Admin = () => {
     }
   };
 
+  const handleSendNotification = async () => {
+    if (!notifTitle.trim() || !notifBody.trim()) return;
+    setNotifSending(true);
+    try {
+      const payload: TablesInsert<"notifications"> = { 
+        title: notifTitle.trim(), 
+        body: notifBody.trim(), 
+        type: notifType,
+        user_id: notifTarget === "all" ? null : notifTarget
+      };
+      const { error } = await supabase.from("notifications").insert(payload);
+      if (error) throw error;
+      toast({ title: "Notification sent ✓", description: notifTarget === "all" ? "Broadcast to all users" : "Sent to selected user" });
+      setNotifTitle(""); setNotifBody(""); setNotifType("info"); setNotifTarget("all");
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setNotifSending(false);
+    }
+  };
+
+  const handleDeleteNotification = async (id: string) => {
+    const { error } = await supabase.from("notifications").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -128,11 +171,12 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="customers">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="customers" className="gap-1"><Users className="h-4 w-4" />Customers</TabsTrigger>
             <TabsTrigger value="kyc" className="gap-1"><FileText className="h-4 w-4" />KYC Submissions</TabsTrigger>
             <TabsTrigger value="accounts" className="gap-1"><CreditCard className="h-4 w-4" />Accounts</TabsTrigger>
             <TabsTrigger value="transactions" className="gap-1"><ArrowLeftRight className="h-4 w-4" />Transactions</TabsTrigger>
+            <TabsTrigger value="notifications" className="gap-1"><Bell className="h-4 w-4" />Notifications</TabsTrigger>
           </TabsList>
 
           {/* Customers Tab */}
@@ -147,6 +191,7 @@ const Admin = () => {
                       <TableHead>Phone</TableHead>
                       <TableHead>Address</TableHead>
                       <TableHead>Joined</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -156,6 +201,120 @@ const Admin = () => {
                         <TableCell>{p.phone || "—"}</TableCell>
                         <TableCell>{p.address || "—"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedUserForMock(p);
+                                  const userAccount = accounts.find(a => a.user_id === p.user_id);
+                                  if (userAccount) setAdjustAccountId(userAccount.id);
+                                }}
+                              >
+                                <PlusCircle className="h-3 w-3 mr-1" /> Mock Txn
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Mock Transaction for {p.full_name}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                  <Label>Select Account</Label>
+                                  <Select value={adjustAccountId} onValueChange={setAdjustAccountId}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select account" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {accounts
+                                        .filter((a) => a.user_id === p.user_id)
+                                        .map((a) => (
+                                          <SelectItem key={a.id} value={a.id}>
+                                            {a.account_number} ({a.account_type}) — ${Number(a.balance).toFixed(2)}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Transaction Type</Label>
+                                  <Select
+                                    value={adjustNarration}
+                                    onValueChange={(v) => {
+                                      setAdjustNarration(v);
+                                      // Determine if it's a deposit or withdrawal based on common names
+                                      const isDebit = v.toLowerCase().includes("fee") ||
+                                        v.toLowerCase().includes("withdrawal") ||
+                                        v.toLowerCase().includes("deduction") ||
+                                        v.toLowerCase().includes("purchase");
+                                      setAdjustType(isDebit ? "withdrawal" : "deposit");
+                                    }}
+                                  >
+                                    <SelectTrigger><SelectValue placeholder="Select type of transaction" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Salary Payment">Salary Payment</SelectItem>
+                                      <SelectItem value="Interest Credit">Interest Credit</SelectItem>
+                                      <SelectItem value="Refund">Refund</SelectItem>
+                                      <SelectItem value="Bonus">Bonus</SelectItem>
+                                      <SelectItem value="Account Maintenance Fee">Account Maintenance Fee</SelectItem>
+                                      <SelectItem value="ATM Withdrawal">ATM Withdrawal</SelectItem>
+                                      <SelectItem value="Online Purchase">Online Purchase</SelectItem>
+                                      <SelectItem value="Tax Deduction">Tax Deduction</SelectItem>
+                                      <SelectItem value="Custom">-- Custom Transaction --</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                {adjustNarration === "Custom" && (
+                                  <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                                    <Label>Custom Narration</Label>
+                                    <Input
+                                      placeholder="e.g. Dividend Payment, Insurance Premium"
+                                      onChange={(e) => setAdjustNarration(e.target.value)}
+                                    />
+                                    <div className="flex gap-4 pt-2">
+                                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                        <input
+                                          type="radio"
+                                          name="type"
+                                          checked={adjustType === "deposit"}
+                                          onChange={() => setAdjustType("deposit")}
+                                        /> Credit (+)
+                                      </label>
+                                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                        <input
+                                          type="radio"
+                                          name="type"
+                                          checked={adjustType === "withdrawal"}
+                                          onChange={() => setAdjustType("withdrawal")}
+                                        /> Debit (-)
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="space-y-2">
+                                  <Label>Amount ($)</Label>
+                                  <Input
+                                    type="number"
+                                    value={adjustAmount}
+                                    onChange={(e) => setAdjustAmount(e.target.value)}
+                                    placeholder="e.g. 1500.00"
+                                  />
+                                </div>
+                                <Button
+                                  className="w-full bg-[#117ACA] mt-2"
+                                  onClick={handleAdjust}
+                                  disabled={!adjustAccountId || !adjustAmount || !adjustNarration}
+                                >
+                                  Process {adjustType === 'deposit' ? 'Credit' : 'Debit'} Transaction
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -418,6 +577,132 @@ const Admin = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+          {/* Notifications Tab */}
+          <TabsContent value="notifications">
+            <div className="space-y-5">
+              {/* Send form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Megaphone className="h-5 w-5 text-[#117ACA]" />
+                    Send Notification
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Title</Label>
+                      <Input
+                        value={notifTitle}
+                        onChange={(e) => setNotifTitle(e.target.value)}
+                        placeholder="e.g. Account Update, Security Alert"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Type</Label>
+                      <Select value={notifType} onValueChange={(v) => setNotifType(v as any)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="info">ℹ️ Info</SelectItem>
+                          <SelectItem value="success">✅ Success</SelectItem>
+                          <SelectItem value="warning">⚠️ Warning</SelectItem>
+                          <SelectItem value="alert">🚨 Alert</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Target User</Label>
+                    <Select value={notifTarget} onValueChange={setNotifTarget}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">📢 Broadcast — All Users</SelectItem>
+                        {profiles.map((p) => (
+                          <SelectItem key={p.user_id} value={p.user_id}>
+                            {p.full_name} ({p.phone || "no phone"})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Message</Label>
+                    <Textarea
+                      value={notifBody}
+                      onChange={(e) => setNotifBody(e.target.value)}
+                      placeholder="Write the notification message here..."
+                      rows={3}
+                    />
+                  </div>
+                  <Button
+                    className="bg-[#117ACA] hover:bg-[#0f6ab5] gap-2"
+                    onClick={handleSendNotification}
+                    disabled={notifSending || !notifTitle.trim() || !notifBody.trim()}
+                  >
+                    <Send className="h-4 w-4" />
+                    {notifSending ? "Sending..." : "Send Notification"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Sent notifications list */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Sent Notifications ({notifications.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {notifications.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No notifications sent yet.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Message</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Target</TableHead>
+                          <TableHead>Sent</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {notifications.map((n) => (
+                          <TableRow key={n.id}>
+                            <TableCell className="font-semibold">{n.title}</TableCell>
+                            <TableCell className="max-w-[200px] truncate text-muted-foreground">{n.body}</TableCell>
+                            <TableCell>
+                              <Badge variant={n.type === "alert" ? "destructive" : n.type === "warning" ? "secondary" : "default"}>
+                                {n.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs font-mono">
+                              {n.user_id ? `${n.user_id.slice(0, 8)}…` : "📢 All users"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {new Date(n.created_at).toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteNotification(n.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -12,15 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import ChaseLogo from "@/components/ChaseLogo";
 import { CheckCircle2, Clock, XCircle, ShieldCheck, User, FileText, Lock, Upload, Image as ImageIcon } from "lucide-react";
+import { hashPin } from "@/lib/crypto";
 
-// Simple SHA-256 hash for PIN (browser-native)
-async function hashPin(pin: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(pin + "chase_salt_2026");
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+
 
 type KycStep = "personal" | "identity" | "pin" | "submitted";
 

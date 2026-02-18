@@ -9,14 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Lock, CheckCircle2, XCircle, User, Phone, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { hashPin } from "@/lib/crypto";
 
-async function hashPin(pin: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(pin + "chase_salt_2026");
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+
 
 const Settings = () => {
     const { user, profile } = useAuth();

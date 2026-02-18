@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Send, ShieldCheck, Loader2 } from "lucide-react";
+import { hashPin } from "@/lib/crypto";
 import type { Tables } from "@/integrations/supabase/types";
 
 type TransferStep = "details" | "pin";
@@ -27,13 +28,7 @@ const Transfer = () => {
   const [step, setStep] = useState<TransferStep>("details");
   const [pin, setPin] = useState("");
 
-  async function hashPin(pin: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(pin + "chase_salt_2026");
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
+
 
   useEffect(() => {
     if (!user) return;
