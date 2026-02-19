@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/accounts", label: "Accounts", icon: CreditCard },
+  { href: "/cards", label: "Cards", icon: CreditCard },
   { href: "/transfer", label: "Transfer", icon: ArrowLeftRight },
   { href: "/transactions", label: "Transaction History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -24,9 +25,9 @@ const adminItems = [
 const mobileNavItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/accounts", label: "Accounts", icon: CreditCard },
+  { href: "/cards", label: "Cards", icon: CreditCard },
   { href: "/transfer", label: "Pay", icon: ArrowLeftRight },
   { href: "/transactions", label: "History", icon: History },
-  { href: "/profile", label: "Profile", icon: UserCircle },
 ];
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -38,7 +39,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     if (!profile?.user_id) return;
-    
+
     const fetchUnread = async () => {
       const { data } = await supabase
         .from("notifications")
@@ -53,10 +54,10 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
     // Subtle subscription to new notifications
     const channel = supabase
       .channel('schema-db-changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'notifications' 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'notifications'
       }, () => {
         fetchUnread();
       })
@@ -93,7 +94,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               Hi, {profile?.full_name || "User"}
             </p>
           </div>
-          <button 
+          <button
             onClick={() => navigate("/notifications")}
             className="p-2 hover:bg-white/10 rounded-full transition-colors flex-shrink-0 relative"
           >
@@ -104,7 +105,10 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               </span>
             )}
           </button>
-          <div className="h-9 w-9 flex items-center justify-center bg-[#1a6aad] rounded-full text-base font-bold cursor-pointer hover:bg-[#1a5fa0] transition-colors flex-shrink-0 border-2 border-white/30">
+          <div 
+            onClick={() => navigate("/profile")}
+            className="h-9 w-9 flex items-center justify-center bg-[#1a6aad] rounded-full text-base font-bold cursor-pointer hover:bg-[#1a5fa0] transition-colors flex-shrink-0 border-2 border-white/30"
+          >
             {initial}
           </div>
         </div>

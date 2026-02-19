@@ -15,6 +15,7 @@ import { Shield, Users, CreditCard, ArrowLeftRight, RotateCcw, Snowflake, Dollar
 import { Textarea } from "@/components/ui/textarea";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
+
 const Admin = () => {
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<Tables<"profiles">[]>([]);
@@ -22,6 +23,8 @@ const Admin = () => {
   const [transactions, setTransactions] = useState<Tables<"transactions">[]>([]);
   const [kycSubmissions, setKycSubmissions] = useState<Tables<"kyc_submissions">[]>([]);
   const [notifications, setNotifications] = useState<Tables<"notifications">[]>([]);
+  const [cards, setCards] = useState<Tables<"cards">[]>([]);
+  const [platformSettings, setPlatformSettings] = useState<Tables<"platform_settings">[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Notification form state
@@ -37,20 +40,29 @@ const Admin = () => {
   const [adjustType, setAdjustType] = useState<"deposit" | "withdrawal">("deposit");
   const [adjustNarration, setAdjustNarration] = useState("");
   const [selectedUserForMock, setSelectedUserForMock] = useState<Tables<"profiles"> | null>(null);
+  const [selectedUserForSecurity, setSelectedUserForSecurity] = useState<Tables<"profiles"> | null>(null);
+  const [cotActive, setCotActive] = useState(false);
+  const [cotCode, setCotCode] = useState("");
+  const [secureIdActive, setSecureIdActive] = useState(false);
+  const [secureIdCode, setSecureIdCode] = useState("");
 
   const fetchAll = async () => {
-    const [p, a, t, k, n] = await Promise.all([
+    const [p, a, t, k, n, c, ps] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("accounts").select("*").order("created_at", { ascending: false }),
       supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(50),
       supabase.from("kyc_submissions").select("*").order("submitted_at", { ascending: false }),
       supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("cards").select("*").order("created_at", { ascending: false }),
+      supabase.from("platform_settings").select("*"),
     ]);
     setProfiles(p.data ?? []);
     setAccounts(a.data ?? []);
     setTransactions(t.data ?? []);
     setKycSubmissions(k.data ?? []);
     setNotifications(n.data ?? []);
+    setCards(c.data ?? []);
+    setPlatformSettings(ps.data ?? []);
     setLoading(false);
   };
 
@@ -122,9 +134,9 @@ const Admin = () => {
     if (!notifTitle.trim() || !notifBody.trim()) return;
     setNotifSending(true);
     try {
-      const payload: TablesInsert<"notifications"> = { 
-        title: notifTitle.trim(), 
-        body: notifBody.trim(), 
+      const payload: TablesInsert<"notifications"> = {
+        title: notifTitle.trim(),
+        body: notifBody.trim(),
         type: notifType,
         user_id: notifTarget === "all" ? null : notifTarget
       };
@@ -146,6 +158,46 @@ const Admin = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }
+  };
+
+  const openSecurityDialog = (profile: Tables<"profiles">) => {
+    setSelectedUserForSecurity(profile);
+    setCotActive(profile.is_cot_active || false);
+    setCotCode(profile.cot_code || "");
+    setSecureIdActive(profile.is_secure_id_active || false);
+    setSecureIdCode(profile.secure_id_code || "");
+  };
+
+  const handleSaveSecurity = async () => {
+    if (!selectedUserForSecurity) return;
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        is_cot_active: cotActive,
+        cot_code: cotCode || null,
+        is_secure_id_active: secureIdActive,
+        secure_id_code: secureIdCode || null,
+      })
+      .eq("id", selectedUserForSecurity.id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Security settings updated." });
+      setSelectedUserForSecurity(null);
+      fetchAll();
+    }
+  };
+
+  const handleActivateCard = async (cardId: string) => {
+    try {
+      const { error } = await supabase.rpc("admin_activate_card", { p_card_id: cardId });
+      if (error) throw error;
+      toast({ title: "Success", description: "Card activated." });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
 
@@ -177,6 +229,8 @@ const Admin = () => {
             <TabsTrigger value="accounts" className="gap-1"><CreditCard className="h-4 w-4" />Accounts</TabsTrigger>
             <TabsTrigger value="transactions" className="gap-1"><ArrowLeftRight className="h-4 w-4" />Transactions</TabsTrigger>
             <TabsTrigger value="notifications" className="gap-1"><Bell className="h-4 w-4" />Notifications</TabsTrigger>
+            <TabsTrigger value="cards" className="gap-1"><CreditCard className="h-4 w-4" />Cards</TabsTrigger>
+            <TabsTrigger value="settings" className="gap-1"><Shield className="h-4 w-4" />Settings</TabsTrigger>
           </TabsList>
 
           {/* Customers Tab */}
@@ -310,6 +364,79 @@ const Admin = () => {
                                   disabled={!adjustAccountId || !adjustAmount || !adjustNarration}
                                 >
                                   Process {adjustType === 'deposit' ? 'Credit' : 'Debit'} Transaction
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+
+                          <Dialog open={!!selectedUserForSecurity} onOpenChange={(open) => !open && setSelectedUserForSecurity(null)}>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="ml-2 bg-red-600 hover:bg-red-700"
+                                onClick={() => openSecurityDialog(p)}
+                              >
+                                <Shield className="h-3 w-3 mr-1" /> Security
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Security Settings — {selectedUserForSecurity?.full_name}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-6 py-4">
+                                <div className="space-y-4 border p-4 rounded-lg bg-red-50/50">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={cotActive}
+                                        onChange={(e) => setCotActive(e.target.checked)}
+                                        className="h-4 w-4"
+                                      />
+                                      Enable COT Code
+                                    </Label>
+                                    <Badge variant={cotActive ? "destructive" : "outline"}>{cotActive ? "Active" : "Inactive"}</Badge>
+                                  </div>
+                                  {cotActive && (
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                                      <Label>COT Code</Label>
+                                      <Input
+                                        value={cotCode}
+                                        onChange={(e) => setCotCode(e.target.value)}
+                                        placeholder="Enter COT Code"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-4 border p-4 rounded-lg bg-blue-50/50">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={secureIdActive}
+                                        onChange={(e) => setSecureIdActive(e.target.checked)}
+                                        className="h-4 w-4"
+                                      />
+                                      Enable Secure ID Range
+                                    </Label>
+                                    <Badge variant={secureIdActive ? "destructive" : "outline"}>{secureIdActive ? "Active" : "Inactive"}</Badge>
+                                  </div>
+                                  {secureIdActive && (
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                                      <Label>Secure ID Code</Label>
+                                      <Input
+                                        value={secureIdCode}
+                                        onChange={(e) => setSecureIdCode(e.target.value)}
+                                        placeholder="Enter Secure ID Code"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <Button className="w-full" onClick={handleSaveSecurity}>
+                                  Save Security Settings
                                 </Button>
                               </div>
                             </DialogContent>
@@ -703,6 +830,83 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Cards Tab */}
+          <TabsContent value="cards">
+            <Card>
+              <CardHeader><CardTitle>All Issued Cards ({cards.length})</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Card Number</TableHead>
+                      <TableHead>User ID</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Expiry</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cards.length === 0 ? (
+                      <TableRow><TableCell colSpan={5} className="text-center py-4">No cards issued yet.</TableCell></TableRow>
+                    ) : cards.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-mono">{c.card_number.replace(/(\d{4})/g, '$1 ').trim()}</TableCell>
+                        <TableCell className="text-xs font-mono">{c.user_id}</TableCell>
+                        <TableCell className="capitalize">{c.type}</TableCell>
+                        <TableCell>{new Date(c.expiry_date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={c.status === "active" ? "default" : c.status === "pending" ? "secondary" : "destructive"}>
+                              {c.status}
+                            </Badge>
+                            {c.status === "pending" && (
+                              <Button size="sm" className="h-6 text-xs" onClick={() => handleActivateCard(c.id)}>
+                                Activate
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader><CardTitle>Platform Settings</CardTitle></CardHeader>
+              <CardContent className="space-y-6">
+                {platformSettings.map((s) => (
+                  <div key={s.key} className="space-y-2 max-w-sm">
+                    <Label className="capitalize">{s.key.replace(/_/g, " ")}</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        defaultValue={s.value}
+                        onBlur={async (e) => {
+                          const newVal = e.target.value.trim();
+                          if (newVal === s.value) return;
+                          const { error } = await supabase
+                            .from("platform_settings")
+                            .update({ value: newVal })
+                            .eq("key", s.key);
+                          if (error) {
+                            toast({ title: "Error", description: error.message, variant: "destructive" });
+                          } else {
+                            toast({ title: "Updated", description: `${s.key} saved.` });
+                            fetchAll();
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

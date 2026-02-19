@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      cards: {
+        Row: {
+          account_id: string
+          card_number: string
+          created_at: string
+          cvv: string
+          expiry_date: string
+          id: string
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          card_number: string
+          created_at?: string
+          cvv: string
+          expiry_date: string
+          id?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          card_number?: string
+          created_at?: string
+          cvv?: string
+          expiry_date?: string
+          id?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       accounts: {
         Row: {
           account_number: string
@@ -83,6 +148,10 @@ export type Database = {
           phone: string | null
           updated_at: string
           user_id: string
+          is_cot_active: boolean
+          cot_code: string | null
+          is_secure_id_active: boolean
+          secure_id_code: string | null
         }
         Insert: {
           address?: string | null
@@ -92,6 +161,10 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id: string
+          is_cot_active?: boolean
+          cot_code?: string | null
+          is_secure_id_active?: boolean
+          secure_id_code?: string | null
         }
         Update: {
           address?: string | null
@@ -101,6 +174,10 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+          is_cot_active?: boolean
+          cot_code?: string | null
+          is_secure_id_active?: boolean
+          secure_id_code?: string | null
         }
         Relationships: []
       }
@@ -335,8 +412,23 @@ export type Database = {
           p_amount: number
           p_pin_hash: string
           p_narration?: string
+          p_cot_code?: string
+          p_secure_id_code?: string
         }
         Returns: string
+      }
+      request_debit_card: {
+        Args: {
+          p_account_id: string
+          p_type?: string
+        }
+        Returns: string
+      }
+      admin_activate_card: {
+        Args: {
+          p_card_id: string
+        }
+        Returns: void
       }
     }
     Enums: {

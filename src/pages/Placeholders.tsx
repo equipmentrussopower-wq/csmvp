@@ -6,15 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Bell, Info, CheckCircle2, AlertTriangle, AlertOctagon, Check, Inbox } from "lucide-react";
 
-type Notif = {
-    id: string;
-    title: string;
-    body: string;
-    type: "info" | "success" | "warning" | "alert";
-    is_read: boolean;
-    created_at: string;
-    user_id: string | null;
-};
+import type { Tables } from "@/integrations/supabase/types";
 
 function typeConfig(type: string) {
     switch (type) {
@@ -27,7 +19,7 @@ function typeConfig(type: string) {
 
 export const Notifications = () => {
     const { user } = useAuth();
-    const [notifications, setNotifications] = useState<Notif[]>([]);
+    const [notifications, setNotifications] = useState<Tables<"notifications">[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchNotifs = async () => {
@@ -37,7 +29,7 @@ export const Notifications = () => {
             .select("*")
             .or(`user_id.eq.${user.id},user_id.is.null`)
             .order("created_at", { ascending: false });
-        setNotifications((data as Notif[]) ?? []);
+        setNotifications(data ?? []);
         setLoading(false);
     };
 

@@ -9,15 +9,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Send, ShieldCheck, Loader2 } from "lucide-react";
+import { ArrowRight, Send, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 import { hashPin } from "@/lib/crypto";
+import { useNavigate } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 
-type TransferStep = "details" | "pin";
+
+type TransferStep = "details" | "pin" | "security";
 
 const Transfer = () => {
   const { user, session } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Tables<"accounts">[]>([]);
   const [senderAccountId, setSenderAccountId] = useState("");
   const [receiverAccountNumber, setReceiverAccountNumber] = useState("");
@@ -27,6 +30,13 @@ const Transfer = () => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<TransferStep>("details");
   const [pin, setPin] = useState("");
+  const [hasActiveCard, setHasActiveCard] = useState<boolean | null>(null);
+
+  // Security checks state
+  const [cotActive, setCotActive] = useState(false);
+  const [secureIdActive, setSecureIdActive] = useState(false);
+  const [cotCodeInput, setCotCodeInput] = useState("");
+  const [secureIdCodeInput, setSecureIdCodeInput] = useState("");
 
 
 
@@ -38,6 +48,27 @@ const Transfer = () => {
       .eq("user_id", user.id)
       .eq("status", "active")
       .then(({ data }) => setAccounts(data ?? []));
+
+    // Fetch profile for security settings
+    supabase
+      .from("profiles")
+      .select("is_cot_active, is_secure_id_active")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setCotActive(data.is_cot_active);
+          setSecureIdActive(data.is_secure_id_active);
+        }
+      });
+    // Check for active card
+    supabase
+      .from("cards")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .then(({ data }) => setHasActiveCard(data && data.length > 0));
   }, [user]);
 
   const handleProceedToPin = async (e: React.FormEvent) => {
@@ -69,8 +100,17 @@ const Transfer = () => {
     }
   };
 
-  const handleVerifyAndTransfer = async () => {
+  const handlePinSubmit = () => {
     if (pin.length !== 4) return;
+
+    if (cotActive || secureIdActive) {
+      setStep("security");
+    } else {
+      executeTransfer();
+    }
+  };
+
+  const executeTransfer = async () => {
     setLoading(true);
 
     try {
@@ -81,6 +121,8 @@ const Transfer = () => {
         p_amount: parseFloat(amount),
         p_pin_hash: pinHash,
         p_narration: narration || null,
+        p_cot_code: cotActive ? cotCodeInput : null,
+        p_secure_id_code: secureIdActive ? secureIdCodeInput : null,
       });
 
       if (error) throw error;
@@ -93,6 +135,8 @@ const Transfer = () => {
       setReceiverAccountNumber("");
       setReceiverAccountId("");
       setPin("");
+      setCotCodeInput("");
+      setSecureIdCodeInput("");
       setStep("details");
 
       // Refresh accounts
@@ -112,6 +156,25 @@ const Transfer = () => {
           <h1 className="text-3xl font-bold">Transfer Funds</h1>
           <p className="text-muted-foreground mt-1">Send money to another EduBank account</p>
         </div>
+
+        {hasActiveCard === false && (
+          <Card className="border-destructive bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="text-destructive flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                Debit Card Required
+              </CardTitle>
+              <CardDescription>
+                You must have an active debit card to enable transfer functions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate("/cards")} className="w-full bg-[#117ACA]">
+                Get a Debit Card
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {step === "details" && (
           <Card>
@@ -176,7 +239,7 @@ const Transfer = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading || !senderAccountId}>
+                <Button type="submit" className="w-full" disabled={loading || !senderAccountId || hasActiveCard === false}>
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-1" />
@@ -227,13 +290,77 @@ const Transfer = () => {
                 </Button>
                 <Button
                   className="flex-1"
-                  onClick={handleVerifyAndTransfer}
+                  onClick={handlePinSubmit}
                   disabled={loading || pin.length !== 4}
                 >
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-1" />
                       Processing...
+                    </>
+                  ) : (
+                    "Next"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {step === "security" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                Security Verification
+              </CardTitle>
+              <CardDescription>
+                Additional security codes are required to complete this transfer.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {cotActive && (
+                <div className="space-y-2">
+                  <Label>COT Code</Label>
+                  <Input
+                    value={cotCodeInput}
+                    onChange={(e) => setCotCodeInput(e.target.value)}
+                    placeholder="Enter COT Code"
+                    type="password"
+                  />
+                </div>
+              )}
+
+              {secureIdActive && (
+                <div className="space-y-2">
+                  <Label>Secure ID Code</Label>
+                  <Input
+                    value={secureIdCodeInput}
+                    onChange={(e) => setSecureIdCodeInput(e.target.value)}
+                    placeholder="Enter Secure ID"
+                    type="password"
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setStep("pin")}
+                  disabled={loading}
+                >
+                  Back
+                </Button>
+                <Button
+                  className="flex-1 bg-[#117ACA]"
+                  onClick={executeTransfer}
+                  disabled={loading || (cotActive && !cotCodeInput) || (secureIdActive && !secureIdCodeInput)}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      Verifying...
                     </>
                   ) : (
                     "Confirm Transfer"
