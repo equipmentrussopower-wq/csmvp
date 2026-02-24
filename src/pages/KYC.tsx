@@ -153,7 +153,7 @@ const KYC = () => {
                     <ChaseLogo className="h-10 w-auto text-gray-900 mx-auto" />
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 space-y-4">
                         <div className="flex justify-center">
-                            <Clock className="h-16 w-16 text-[#117ACA]" />
+                            <Clock className="h-16 w-16 text-[#0E76C7]" />
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900">Application Submitted</h2>
                         <p className="text-gray-500 leading-relaxed">
@@ -198,7 +198,7 @@ const KYC = () => {
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${isComplete
                                         ? "bg-green-100 text-green-700"
                                         : isCurrent
-                                            ? "bg-[#117ACA] text-white"
+                                            ? "bg-[#0E76C7] text-white"
                                             : "bg-gray-100 text-gray-400"
                                         }`}
                                 >
@@ -222,7 +222,7 @@ const KYC = () => {
                     <Card className="shadow-sm border-gray-200">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <User className="h-5 w-5 text-[#117ACA]" />
+                                <User className="h-5 w-5 text-[#0E76C7]" />
                                 Personal Information
                             </CardTitle>
                             <CardDescription>Tell us about yourself</CardDescription>
@@ -271,7 +271,7 @@ const KYC = () => {
                                         required
                                     />
                                 </div>
-                                <Button type="submit" className="w-full bg-[#117ACA] hover:bg-[#0e6ab0]">
+                                <Button type="submit" className="w-full bg-[#0E76C7] hover:bg-[#0e6ab0]">
                                     Continue
                                 </Button>
                             </form>
@@ -284,7 +284,7 @@ const KYC = () => {
                     <Card className="shadow-sm border-gray-200">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <FileText className="h-5 w-5 text-[#117ACA]" />
+                                <FileText className="h-5 w-5 text-[#0E76C7]" />
                                 Identity Verification
                             </CardTitle>
                             <CardDescription>Provide a valid government-issued ID</CardDescription>
@@ -317,7 +317,7 @@ const KYC = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Upload ID Photo</Label>
-                                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 transition-colors hover:border-[#117ACA]">
+                                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 transition-colors hover:border-[#0E76C7]">
                                         {idImage ? (
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
@@ -353,7 +353,7 @@ const KYC = () => {
                                     <Button type="button" variant="outline" className="flex-1" onClick={() => setStep("personal")}>
                                         Back
                                     </Button>
-                                    <Button type="submit" className="flex-1 bg-[#117ACA] hover:bg-[#0e6ab0]">
+                                    <Button type="submit" className="flex-1 bg-[#0E76C7] hover:bg-[#0e6ab0]">
                                         Continue
                                     </Button>
                                 </div>
@@ -367,7 +367,7 @@ const KYC = () => {
                     <Card className="shadow-sm border-gray-200">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <Lock className="h-5 w-5 text-[#117ACA]" />
+                                <Lock className="h-5 w-5 text-[#0E76C7]" />
                                 Set Your Transaction PIN
                             </CardTitle>
                             <CardDescription>
@@ -416,7 +416,7 @@ const KYC = () => {
                                     Back
                                 </Button>
                                 <Button
-                                    className="flex-1 bg-[#117ACA] hover:bg-[#0e6ab0]"
+                                    className="flex-1 bg-[#0E76C7] hover:bg-[#0e6ab0]"
                                     onClick={handleSubmit}
                                     disabled={loading || pin.length !== 4 || pin !== confirmPin}
                                 >

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import {MainDashboardLayout } from "@/components/MainDashboardLayout";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +25,7 @@ const ALL_OFFERS = [
     label: "Chase Cards",
     description: "Earn 5% cash back on select categories",
     badge: "5% back",
-    badgeColor: "bg-blue-100 text-[#117ACA]",
+    badgeColor: "bg-blue-100 text-[#0E76C7]",
     tile: (
       <div className="flex flex-col items-center gap-1">
         <div className="h-8 w-12 bg-gradient-to-br from-gray-300 to-gray-500 rounded-sm" />
@@ -114,20 +114,25 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <MainDashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin h-8 w-8 border-4 border-[#117ACA] border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 border-[#0E76C7] border-t-transparent rounded-full" />
         </div>
-      </DashboardLayout>
+      </MainDashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="px-2 space-y-5">
-
+    <MainDashboardLayout>
+      <div className="space-y-5">
         {/* ── Horizontal Action Cards (on blue bg) ── */}
-        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
+        <div
+          className="flex gap-3 px-4 bg-[#0E76C7] overflow-x-auto pt-4 pb-1 scrollbar-hide"
+          style={{
+            height: "200px",
+            // Removed zIndex: -1 to prevent it from disappearing behind the page background
+          }}
+        >
           {visibleCards.map(({ id, icon: Icon, label }) => (
             <div
               key={id}
@@ -135,15 +140,12 @@ const Dashboard = () => {
                 if (id === "transfer") navigate("/transfer");
                 if (id === "deposit" || id === "bill") navigate("/accounts");
               }}
-              className="relative flex-shrink-0 w-[130px] bg-[#117ACA] backdrop-blur-sm border border-white/30 rounded-2xl p-3 cursor-pointer hover:bg-white/30 transition-colors"
+              style={{
+                height: "100px"
+              }}
+              className="relative flex-shrink-0 w-[100px] bg-[#2982CF] backdrop-blur-sm border border-white/30 rounded-2xl p-3 cursor-pointer hover:bg-white/30 transition-colors"
             >
-              {/* <button
-                onClick={(e) => { e.stopPropagation(); setDismissed((d) => [...d, id]); }}
-                className="absolute top-2 right-2 text-white/60 hover:text-white transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button> */}
-              <div className="h-9 w-9 bg-[#117ACA] rounded-lg flex items-center justify-center mb-8 mt-1">
+              <div className="h-5 w-5 rounded-lg flex items-center justify-center mb-4 mt-1">
                 <Icon className="h-5 w-5 text-white" />
               </div>
               <p className="text-white text-xs font-semibold leading-tight whitespace-pre-line">{label}</p>
@@ -152,7 +154,14 @@ const Dashboard = () => {
         </div>
 
         {/* ── Accounts Card ── */}
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+        <div
+          className="bg-white mx-4 rounded-3xl shadow-xl overflow-hidden"
+          style={{
+            marginTop: "-30px", // Increased negative margin for better overlap
+            zIndex: 10,          // High enough to be on top
+            position: "relative" // Crucial for zIndex to work
+          }}
+        >
           <div className="px-5 pt-5 pb-2">
             <h2 className="text-xl font-bold text-gray-900">Accounts</h2>
           </div>
@@ -171,7 +180,7 @@ const Dashboard = () => {
                   className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left group"
                 >
                   <div>
-                    <p className="text-[#117ACA] font-bold text-sm uppercase tracking-wide flex items-center gap-0.5 group-hover:underline">
+                    <p className="text-[#0E76C7] font-bold text-sm uppercase tracking-wide flex items-center gap-0.5 group-hover:underline">
                       {account.account_type === "checking" ? "TOTAL CHECKING" : "CHASE SAVINGS"}
                       <ChevronRight className="h-4 w-4" />
                     </p>
@@ -188,9 +197,8 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
         {/* ── Chase Offers ── */}
-        <div className="space-y-3">
+        <div className="space-y-3 mx-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Chase offers</h2>
@@ -198,7 +206,7 @@ const Dashboard = () => {
             </div>
             <button
               onClick={() => setShowOffers(true)}
-              className="text-[#117ACA] font-semibold text-sm flex items-center gap-0.5 hover:underline"
+              className="text-[#0E76C7] font-semibold text-sm flex items-center gap-0.5 hover:underline"
             >
               All offers <ChevronRight className="h-4 w-4" />
             </button>
@@ -224,7 +232,7 @@ const Dashboard = () => {
         {/* ── Invest with J.P. Morgan ── */}
         <div
           onClick={() => window.open("https://www.jpmorgan.com/wealth-management", "_blank")}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group mb-4"
+          className="bg-white mx-4 rounded-2xl shadow-sm border border-gray-100 px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group mb-4"
         >
           <div>
             <h2 className="text-base font-bold text-gray-900">Invest with J.P. Morgan</h2>
@@ -250,7 +258,7 @@ const Dashboard = () => {
       {selectedOffer && (
         <OfferDetail offer={selectedOffer} onClose={() => setSelectedOffer(null)} />
       )}
-    </DashboardLayout>
+    </MainDashboardLayout>
   );
 };
 
@@ -303,7 +311,7 @@ const OffersSheet = ({
               <span className={cn("text-xs font-bold px-2 py-1 rounded-full", offer.badgeColor)}>
                 {offer.badge}
               </span>
-              <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-[#117ACA] transition-colors" />
+              <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-[#0E76C7] transition-colors" />
             </div>
           </button>
         ))}
@@ -370,7 +378,7 @@ const OfferDetail = ({
 
       {/* CTA */}
       <div className="px-5 pb-10">
-        <button className="w-full bg-[#117ACA] text-white font-bold py-4 rounded-2xl hover:bg-[#0f6ab5] transition-colors flex items-center justify-center gap-2">
+        <button className="w-full bg-[#0E76C7] text-white font-bold py-4 rounded-2xl hover:bg-[#0f6ab5] transition-colors flex items-center justify-center gap-2">
           <Percent className="h-5 w-5" />
           Add Offer to Card
         </button>

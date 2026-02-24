@@ -16,8 +16,8 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: b
   if (!user) return <Navigate to="/auth" replace />;
 
   // Redirect to KYC if not approved and trying to access restricted pages
-  // Admins skip KYC for the admin panel usually, but for demo we can enforce it if needed.
-  if (!isAdmin && kycStatus !== "approved" && location.pathname !== "/kyc") {
+  const allowedUnverifiedPaths = ["/kyc", "/dashboard", "/profile", "/auth"];
+  if (!isAdmin && kycStatus !== "approved" && !allowedUnverifiedPaths.includes(location.pathname)) {
     return <Navigate to="/kyc" replace />;
   }
 

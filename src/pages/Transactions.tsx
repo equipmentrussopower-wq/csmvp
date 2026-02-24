@@ -32,18 +32,18 @@ function groupByDate(txns: Txn[]): Record<string, Txn[]> {
 
 function txnIcon(type: string) {
   switch (type) {
-    case "deposit":    return { Icon: ArrowDownLeft,  bg: "bg-green-100",  color: "text-green-600"  };
-    case "withdrawal": return { Icon: ArrowUpRight,   bg: "bg-red-100",    color: "text-red-500"    };
-    case "transfer":   return { Icon: ArrowLeftRight, bg: "bg-blue-100",   color: "text-[#117ACA]"  };
-    case "reversal":   return { Icon: RotateCcw,      bg: "bg-amber-100",  color: "text-amber-600"  };
-    default:           return { Icon: AlertCircle,    bg: "bg-gray-100",   color: "text-gray-500"   };
+    case "deposit": return { Icon: ArrowDownLeft, bg: "bg-green-100", color: "text-green-600" };
+    case "withdrawal": return { Icon: ArrowUpRight, bg: "bg-red-100", color: "text-red-500" };
+    case "transfer": return { Icon: ArrowLeftRight, bg: "bg-blue-100", color: "text-[#0E76C7]" };
+    case "reversal": return { Icon: RotateCcw, bg: "bg-amber-100", color: "text-amber-600" };
+    default: return { Icon: AlertCircle, bg: "bg-gray-100", color: "text-gray-500" };
   }
 }
 
 function amountColor(type: string) {
   if (type === "deposit") return "text-green-600";
   if (type === "withdrawal" || type === "reversal") return "text-red-500";
-  if (type === "transfer") return "text-[#117ACA]";
+  if (type === "transfer") return "text-[#0E76C7]";
   return "text-gray-700";
 }
 
@@ -57,18 +57,18 @@ function amountPrefix(type: string) {
 function statusConfig(status: string) {
   switch (status) {
     case "completed": return { label: "Completed", Icon: CheckCircle2, cls: "bg-green-50 text-green-700 border-green-200" };
-    case "reversed":  return { label: "Reversed",  Icon: XCircle,      cls: "bg-red-50 text-red-600 border-red-200"       };
-    default:          return { label: "Pending",   Icon: Clock,        cls: "bg-amber-50 text-amber-700 border-amber-200" };
+    case "reversed": return { label: "Reversed", Icon: XCircle, cls: "bg-red-50 text-red-600 border-red-200" };
+    default: return { label: "Pending", Icon: Clock, cls: "bg-amber-50 text-amber-700 border-amber-200" };
   }
 }
 
 // Filter config — dynamically built from actual data + fixed types
 const FILTER_TYPES = [
-  { key: "all",        label: "All",        Icon: Layers,        activeBg: "bg-gray-900",    activeText: "text-white", dot: "bg-gray-400"   },
-  { key: "deposit",    label: "Deposits",   Icon: TrendingDown,  activeBg: "bg-green-500",   activeText: "text-white", dot: "bg-green-400"  },
-  { key: "withdrawal", label: "Withdrawals",Icon: TrendingUp,    activeBg: "bg-red-500",     activeText: "text-white", dot: "bg-red-400"    },
-  { key: "transfer",   label: "Transfers",  Icon: ArrowLeftRight,activeBg: "bg-[#117ACA]",   activeText: "text-white", dot: "bg-blue-400"   },
-  { key: "reversal",   label: "Reversals",  Icon: Repeat2,       activeBg: "bg-amber-500",   activeText: "text-white", dot: "bg-amber-400"  },
+  { key: "all", label: "All", Icon: Layers, activeBg: "bg-gray-900", activeText: "text-white", dot: "bg-gray-400" },
+  { key: "deposit", label: "Deposits", Icon: TrendingDown, activeBg: "bg-green-500", activeText: "text-white", dot: "bg-green-400" },
+  { key: "withdrawal", label: "Withdrawals", Icon: TrendingUp, activeBg: "bg-red-500", activeText: "text-white", dot: "bg-red-400" },
+  { key: "transfer", label: "Transfers", Icon: ArrowLeftRight, activeBg: "bg-[#0E76C7]", activeText: "text-white", dot: "bg-blue-400" },
+  { key: "reversal", label: "Reversals", Icon: Repeat2, activeBg: "bg-amber-500", activeText: "text-white", dot: "bg-amber-400" },
 ];
 
 // ── Statement generator ───────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ function openStatement(transactions: Txn[], userName: string) {
   const rows = transactions.map((txn) => {
     const prefix = amountPrefix(txn.transaction_type);
     const amt = `${prefix}$${Number(txn.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-    const color = txn.transaction_type === "deposit" ? "#16a34a" : (txn.transaction_type === "withdrawal" || txn.transaction_type === "reversal") ? "#ef4444" : "#117ACA";
+    const color = txn.transaction_type === "deposit" ? "#16a34a" : (txn.transaction_type === "withdrawal" || txn.transaction_type === "reversal") ? "#ef4444" : "#0E76C7";
     return `<tr>
       <td>${new Date(txn.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
       <td class="mono">${txn.reference_code}</td>
@@ -94,8 +94,8 @@ function openStatement(transactions: Txn[], userName: string) {
     <style>
       *{margin:0;padding:0;box-sizing:border-box}
       body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;padding:40px;color:#111}
-      .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #117ACA}
-      .brand{font-size:28px;font-weight:900;color:#117ACA;letter-spacing:-1px}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #0E76C7}
+      .brand{font-size:28px;font-weight:900;color:#0E76C7;letter-spacing:-1px}
       .meta{text-align:right;font-size:13px;color:#666;line-height:1.6}
       h2{font-size:18px;font-weight:700;margin-bottom:16px;color:#111}
       table{width:100%;border-collapse:collapse;font-size:13px}
@@ -171,7 +171,7 @@ const Transactions = () => {
           </div>
           <button
             onClick={() => openStatement(transactions, profile?.full_name || "Account Holder")}
-            className="flex items-center gap-1.5 text-sm text-[#117ACA] font-semibold bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-[#0E76C7] font-semibold bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition-colors"
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Download Statement</span>
@@ -216,7 +216,7 @@ const Transactions = () => {
         <div className="px-4 space-y-5">
           {loading ? (
             <div className="flex justify-center py-16">
-              <div className="animate-spin h-8 w-8 border-4 border-[#117ACA] border-t-transparent rounded-full" />
+              <div className="animate-spin h-8 w-8 border-4 border-[#0E76C7] border-t-transparent rounded-full" />
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16 text-gray-400">
@@ -284,7 +284,7 @@ const TransactionDetail = ({ txn, onClose }: { txn: Txn; onClose: () => void }) 
     if (!w) return;
     const prefix = amountPrefix(txn.transaction_type);
     const amount = `${prefix}$${Number(txn.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-    const amtColor = txn.transaction_type === "deposit" ? "#16a34a" : (txn.transaction_type === "withdrawal" || txn.transaction_type === "reversal") ? "#ef4444" : "#117ACA";
+    const amtColor = txn.transaction_type === "deposit" ? "#16a34a" : (txn.transaction_type === "withdrawal" || txn.transaction_type === "reversal") ? "#ef4444" : "#0E76C7";
     const statusBg = txn.status === "completed" ? "#dcfce7" : txn.status === "reversed" ? "#fee2e2" : "#fef9c3";
     const statusClr = txn.status === "completed" ? "#15803d" : txn.status === "reversed" ? "#dc2626" : "#a16207";
     const date = new Date(txn.created_at).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -295,7 +295,7 @@ const TransactionDetail = ({ txn, onClose }: { txn: Txn; onClose: () => void }) 
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;display:flex;justify-content:center;padding:32px 16px}
         .card{background:white;border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)}
-        .hdr{background:#117ACA;color:white;padding:28px 24px;text-align:center}
+        .hdr{background:#0E76C7;color:white;padding:28px 24px;text-align:center}
         .hdr h1{font-size:24px;font-weight:900;letter-spacing:-1px}
         .hdr p{font-size:13px;opacity:.75;margin-top:4px}
         .amt-box{padding:28px 24px;text-align:center;border-bottom:1px solid #f0f0f0}
@@ -405,19 +405,19 @@ const TransactionDetail = ({ txn, onClose }: { txn: Txn; onClose: () => void }) 
 
         {/* Detail rows */}
         <div className="px-5 divide-y divide-gray-100 mb-6">
-          <DetailRow icon={Hash}         label="Reference"  value={txn.reference_code} mono />
-          <DetailRow icon={Calendar}     label="Date & Time" value={new Date(txn.created_at).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })} />
-          <DetailRow icon={FileText}     label="Description" value={txn.narration || "—"} />
-          <DetailRow icon={CreditCard}   label="Type"        value={txn.transaction_type.charAt(0).toUpperCase() + txn.transaction_type.slice(1)} />
-          {txn.sender_account_id   && <DetailRow icon={ArrowUpRight}   label="From Account" value={`...${txn.sender_account_id.slice(-8)}`}   mono />}
-          {txn.receiver_account_id && <DetailRow icon={ArrowDownLeft}  label="To Account"   value={`...${txn.receiver_account_id.slice(-8)}`} mono />}
+          <DetailRow icon={Hash} label="Reference" value={txn.reference_code} mono />
+          <DetailRow icon={Calendar} label="Date & Time" value={new Date(txn.created_at).toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })} />
+          <DetailRow icon={FileText} label="Description" value={txn.narration || "—"} />
+          <DetailRow icon={CreditCard} label="Type" value={txn.transaction_type.charAt(0).toUpperCase() + txn.transaction_type.slice(1)} />
+          {txn.sender_account_id && <DetailRow icon={ArrowUpRight} label="From Account" value={`...${txn.sender_account_id.slice(-8)}`} mono />}
+          {txn.receiver_account_id && <DetailRow icon={ArrowDownLeft} label="To Account" value={`...${txn.receiver_account_id.slice(-8)}`} mono />}
         </div>
 
         {/* Actions */}
         <div className="px-5 pb-10 flex gap-3">
           <button
             onClick={handleDownloadReceipt}
-            className="flex-1 flex items-center justify-center gap-2 bg-[#117ACA] text-white font-semibold py-3.5 rounded-2xl hover:bg-[#0f6ab5] transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 bg-[#0E76C7] text-white font-semibold py-3.5 rounded-2xl hover:bg-[#0f6ab5] transition-colors"
           >
             <Download className="h-4 w-4" />
             Download Receipt

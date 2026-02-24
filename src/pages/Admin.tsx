@@ -359,7 +359,7 @@ const Admin = () => {
                                   />
                                 </div>
                                 <Button
-                                  className="w-full bg-[#117ACA] mt-2"
+                                  className="w-full bg-[#0E76C7] mt-2"
                                   onClick={handleAdjust}
                                   disabled={!adjustAccountId || !adjustAmount || !adjustNarration}
                                 >
@@ -712,7 +712,7 @@ const Admin = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Megaphone className="h-5 w-5 text-[#117ACA]" />
+                    <Megaphone className="h-5 w-5 text-[#0E76C7]" />
                     Send Notification
                   </CardTitle>
                 </CardHeader>
@@ -763,7 +763,7 @@ const Admin = () => {
                     />
                   </div>
                   <Button
-                    className="bg-[#117ACA] hover:bg-[#0f6ab5] gap-2"
+                    className="bg-[#0E76C7] hover:bg-[#0f6ab5] gap-2"
                     onClick={handleSendNotification}
                     disabled={notifSending || !notifTitle.trim() || !notifBody.trim()}
                   >

@@ -169,7 +169,7 @@ const Transfer = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => navigate("/cards")} className="w-full bg-[#117ACA]">
+              <Button onClick={() => navigate("/cards")} className="w-full bg-[#0E76C7]">
                 Get a Debit Card
               </Button>
             </CardContent>
@@ -353,7 +353,7 @@ const Transfer = () => {
                   Back
                 </Button>
                 <Button
-                  className="flex-1 bg-[#117ACA]"
+                  className="flex-1 bg-[#0E76C7]"
                   onClick={executeTransfer}
                   disabled={loading || (cotActive && !cotCodeInput) || (secureIdActive && !secureIdCodeInput)}
                 >

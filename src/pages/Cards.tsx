@@ -80,7 +80,7 @@ const Cards = () => {
                         <h1 className="text-3xl font-bold">Debit Cards</h1>
                         <p className="text-muted-foreground mt-1">Manage your virtual and physical cards</p>
                     </div>
-                    <ShoppingBag className="h-8 w-8 text-[#117ACA]" />
+                    <ShoppingBag className="h-8 w-8 text-[#0E76C7]" />
                 </div>
 
                 {cards.length === 0 ? (
@@ -93,9 +93,9 @@ const Cards = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="bg-blue-50 p-4 rounded-lg flex items-start gap-3">
-                                <ShieldCheck className="h-5 w-5 text-[#117ACA] mt-0.5" />
-                                <div className="text-sm border-l-2 border-[#117ACA] pl-3">
-                                    <p className="font-semibold text-[#117ACA]">Card Application Terms</p>
+                                <ShieldCheck className="h-5 w-5 text-[#0E76C7] mt-0.5" />
+                                <div className="text-sm border-l-2 border-[#0E76C7] pl-3">
+                                    <p className="font-semibold text-[#0E76C7]">Card Application Terms</p>
                                     <p className="mt-1">Cost of Debit card is <strong>${cardCost.toLocaleString()}</strong>.</p>
                                     <p className="mt-2">After application, the admin will reach out to you via your registered contact details to facilitate payment and linkage.</p>
                                     <p className="mt-2 text-xs text-muted-foreground italic">Note: You do not pay for the card directly on this platform.</p>
@@ -119,7 +119,7 @@ const Cards = () => {
                             </div>
 
                             <Button
-                                className="w-full bg-[#117ACA] hover:bg-[#0f6ab5]"
+                                className="w-full bg-[#0E76C7] hover:bg-[#0f6ab5]"
                                 size="lg"
                                 onClick={handleRequestCard}
                                 disabled={requesting || !selectedAccountId}

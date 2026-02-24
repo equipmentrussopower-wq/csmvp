@@ -30,7 +30,7 @@ const mobileNavItems = [
   { href: "/transactions", label: "History", icon: History },
 ];
 
-export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const MainDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile, isAdmin, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -85,34 +85,60 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
       {isNavigating && <TopProgressBar />}
 
       {/* ── Blue Header ── */}
-      <div className="bg-[#117ACA] text-white pb4">
-        {/* Row 1: Search + Bell + Avatar */}
-        <div className="flex items-center gap-3 px-4 pt-4 pb-4">
+      <div className="bg-[#0E76C7] text-white">
+        {/* Row 1: Search bar + Bell + Avatar */}
+        <div className="flex items-center gap-3 px-4 pt-4 pb-2">
           <div className="flex-1 relative">
-            <ChaseLogo className="h-9 w-auto text-white flex-shrink-0" style={{ color: "white", width: "150px" }} />
-            <p className="text-white text-lg font-semibold leading-tight">
-              Hi, {profile?.full_name || "User"}
-            </p>
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-white/70" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search in the app"
+              className="w-full bg-white/20 border-none rounded-lg py-2 pl-9 pr-4 text-sm text-white placeholder:text-white/60 focus:ring-1 focus:ring-white/40 focus:outline-none transition-all"
+            />
           </div>
+          
           <button
             onClick={() => navigate("/notifications")}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors flex-shrink-0 relative"
+            className="p-1.5 hover:bg-white/10 rounded-full transition-colors relative flex-shrink-0"
           >
             <Bell className="h-6 w-6" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 h-4 min-w-[16px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border border-blue-900 px-0.5">
+              <span className="absolute top-0 right-0 h-4 min-w-[16px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border border-[#0E76C7] px-0.5">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </button>
-          <div 
+          
+          <div
             onClick={() => navigate("/profile")}
-            className="h-9 w-9 flex items-center justify-center bg-[#1a6aad] rounded-full text-base font-bold cursor-pointer hover:bg-[#1a5fa0] transition-colors flex-shrink-0 border-2 border-white/30"
+            className="h-9 w-9 flex items-center justify-center bg-white/20 rounded-full text-base font-bold cursor-pointer hover:bg-white/30 transition-colors flex-shrink-0"
           >
             {initial}
           </div>
         </div>
 
+        {/* Row 2: Chase Logo + Greeting + PlusIcon */}
+        <div className="flex items-center justify-between px-4 pt-2 pb-6">
+          <div className="flex items-center gap-3">
+            <ChaseLogo className="h-10 text-white" style={{ color: "white", width: "150px" }} />
+            <div className="flex flex-col">
+              <span className="text-white font-bold leading-tight" style={{
+                fontSize: "22px"
+              }}>
+                Hi, {profile?.full_name || "User"} 
+              </span>
+            </div>
+          </div>
+          
+          <button 
+            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            onClick={() => navigate("/transfer")}
+          >
+            <Plus className="h-7 w-7 text-white" />
+          </button>
+        </div>
       </div>
 
       {/* ── Body ── */}
@@ -127,7 +153,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
                   location.pathname === item.href
-                    ? "bg-blue-50 text-[#117ACA]"
+                    ? "bg-blue-50 text-[#0E76C7]"
                     : "hover:bg-gray-100 text-gray-600"
                 )}
               >
@@ -148,7 +174,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto p-4 pb-20 md:pb-6 mt-6">
+        <main className="flex-1 overflow-auto pt-4 pb-20 md:pb-6 -mt-6">
           {children}
         </main>
       </div>
@@ -163,11 +189,11 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               to={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-0.5 w-full h-full transition-colors relative",
-                isActive ? "text-[#117ACA]" : "text-gray-400"
+                isActive ? "text-[#0E76C7]" : "text-gray-400"
               )}
             >
               {isActive && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#117ACA] rounded-b-full" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#0E76C7] rounded-b-full" />
               )}
               <item.icon className={cn("h-5 w-5", isActive && "stroke-[2.5px]")} />
               <span className="text-[10px] font-medium">{item.label}</span>

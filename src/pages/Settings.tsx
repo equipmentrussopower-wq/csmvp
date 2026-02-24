@@ -88,7 +88,7 @@ const Settings = () => {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <User className="h-5 w-5 text-[#117ACA]" />
+                            <User className="h-5 w-5 text-[#0E76C7]" />
                             Profile Information
                         </CardTitle>
                         <CardDescription>Update your contact details</CardDescription>
@@ -126,7 +126,7 @@ const Settings = () => {
                         <Button
                             onClick={handleSaveProfile}
                             disabled={profileLoading}
-                            className="bg-[#117ACA] hover:bg-[#0e6ab0]"
+                            className="bg-[#0E76C7] hover:bg-[#0e6ab0]"
                         >
                             {profileLoading ? "Saving..." : "Save Profile"}
                         </Button>
@@ -137,7 +137,7 @@ const Settings = () => {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Lock className="h-5 w-5 text-[#117ACA]" />
+                            <Lock className="h-5 w-5 text-[#0E76C7]" />
                             Transaction PIN
                         </CardTitle>
                         <CardDescription>
@@ -185,7 +185,7 @@ const Settings = () => {
                         )}
 
                         <Button
-                            className="w-full bg-[#117ACA] hover:bg-[#0e6ab0]"
+                            className="w-full bg-[#0E76C7] hover:bg-[#0e6ab0]"
                             onClick={handleSavePin}
                             disabled={pinLoading || !pinMatch}
                         >

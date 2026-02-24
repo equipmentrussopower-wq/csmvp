@@ -1,278 +1,203 @@
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { DashboardLayout } from "@/components/DashboardLayout";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
-import { hashPin } from "@/lib/crypto";
-import {
-    User, Phone, MapPin, Lock, LogOut, ChevronRight,
-    Shield, Bell, HelpCircle, FileText, CheckCircle2, XCircle,
-    CreditCard, Eye, EyeOff
+import { 
+  ChevronLeft, Camera, User, Mail, Phone, CreditCard, 
+  Shield, Building, LogOut, ChevronRight, RefreshCw, FileText
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import ChaseLogo from "@/components/ChaseLogo";
+import type { Tables } from "@/integrations/supabase/types";
+import { cn } from "@/lib/utils";
 
 const Profile = () => {
     const { user, profile, signOut } = useAuth();
     const navigate = useNavigate();
-    const { toast } = useToast();
+    const [accounts, setAccounts] = useState<Tables<"accounts">[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Profile state
-    const [phone, setPhone] = useState(profile?.phone ?? "");
-    const [address, setAddress] = useState(profile?.address ?? "");
-    const [profileLoading, setProfileLoading] = useState(false);
-
-    // PIN state
-    const [showPinSection, setShowPinSection] = useState(false);
-    const [newPin, setNewPin] = useState("");
-    const [confirmPin, setConfirmPin] = useState("");
-    const [pinLoading, setPinLoading] = useState(false);
-
-    const initial = profile?.full_name?.charAt(0)?.toUpperCase() || "U";
-    const pinMatch = newPin.length === 4 && confirmPin.length === 4 && newPin === confirmPin;
-    const pinMismatch = newPin.length === 4 && confirmPin.length === 4 && newPin !== confirmPin;
-
-    const handleSaveProfile = async () => {
+    useEffect(() => {
         if (!user) return;
-        setProfileLoading(true);
-        try {
-            const { error } = await supabase
-                .from("profiles")
-                .update({ phone, address })
-                .eq("user_id", user.id);
-            if (error) throw error;
-            toast({ title: "Profile updated successfully ✓" });
-        } catch (err: any) {
-            toast({ title: "Failed to update profile", description: err.message, variant: "destructive" });
-        } finally {
-            setProfileLoading(false);
-        }
-    };
+        const fetchAccounts = async () => {
+            const { data } = await supabase
+                .from("accounts")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("created_at", { ascending: false });
+            setAccounts(data || []);
+            setLoading(false);
+        };
+        fetchAccounts();
+    }, [user]);
 
-    const handleSavePin = async () => {
-        if (!pinMatch || !user) return;
-        setPinLoading(true);
-        try {
-            const pinHash = await hashPin(newPin);
-            const { error } = await supabase.from("user_pins").upsert({ user_id: user.id, pin_hash: pinHash });
-            if (error) throw error;
-            toast({ title: "PIN updated successfully ✓" });
-            setNewPin(""); setConfirmPin(""); setShowPinSection(false);
-        } catch (err: any) {
-            toast({ title: "Failed to update PIN", description: err.message, variant: "destructive" });
-        } finally {
-            setPinLoading(false);
-        }
-    };
+    const initial = profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || "RE";
+    const fullName = profile?.full_name || "Account Holder";
+    const email = user?.email || "";
+    const phone = profile?.phone || "Not set";
 
     const handleSignOut = async () => {
         await signOut();
         navigate("/auth");
     };
 
-    return (
-        <DashboardLayout>
-            <div className="px-4 pt-4 pb-10 space-y-5">
-
-                {/* ── Avatar + Name ── */}
-                <div className="flex flex-col items-center py-8 bg-white rounded-3xl shadow-sm">
-                    <div className="h-20 w-20 rounded-full bg-[#117ACA] flex items-center justify-center text-white text-3xl font-bold mb-3 shadow-md">
-                        {initial}
-                    </div>
-                    <h1 className="text-xl font-bold text-gray-900">{profile?.full_name || "Account Holder"}</h1>
-                    <p className="text-sm text-gray-500 mt-0.5">{user?.email}</p>
-                    <span className="mt-3 text-xs font-semibold bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                        Active Account
-                    </span>
-                </div>
-
-                {/* ── Contact Info ── */}
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                    <div className="px-5 pt-4 pb-2">
-                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Contact Information</h2>
-                    </div>
-                    <div className="px-5 pb-5 space-y-4">
-                        <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500 flex items-center gap-1.5">
-                                <User className="h-3.5 w-3.5" /> Full Name
-                            </Label>
-                            <Input value={profile?.full_name ?? ""} disabled className="bg-gray-50 text-gray-500 border-gray-100" />
-                            <p className="text-[11px] text-gray-400">Name cannot be changed. Contact support if needed.</p>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500 flex items-center gap-1.5">
-                                <Phone className="h-3.5 w-3.5" /> Phone Number
-                            </Label>
-                            <Input
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="+1 234 567 8900"
-                                className="border-gray-200"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500 flex items-center gap-1.5">
-                                <MapPin className="h-3.5 w-3.5" /> Address
-                            </Label>
-                            <Input
-                                value={address}
-                                onChange={(e) => setAddress(e.target.value)}
-                                placeholder="123 Main St, City, State"
-                                className="border-gray-200"
-                            />
-                        </div>
-                        <button
-                            onClick={handleSaveProfile}
-                            disabled={profileLoading}
-                            className="w-full bg-[#117ACA] text-white font-semibold py-3 rounded-xl hover:bg-[#0f6ab5] transition-colors disabled:opacity-60"
-                        >
-                            {profileLoading ? "Saving..." : "Save Changes"}
-                        </button>
-                    </div>
-                </div>
-
-                {/* ── Quick Links ── */}
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
-                    <ProfileRow
-                        icon={Lock}
-                        iconBg="bg-blue-50"
-                        iconColor="text-[#117ACA]"
-                        label="Transaction PIN"
-                        sublabel="Update your 4-digit transfer PIN"
-                        onClick={() => setShowPinSection((v) => !v)}
-                    />
-                    <ProfileRow
-                        icon={Shield}
-                        iconBg="bg-purple-50"
-                        iconColor="text-purple-600"
-                        label="Security & KYC"
-                        sublabel="View your verification status"
-                        onClick={() => navigate("/kyc")}
-                    />
-                    <ProfileRow
-                        icon={Bell}
-                        iconBg="bg-amber-50"
-                        iconColor="text-amber-600"
-                        label="Notifications"
-                        sublabel="Manage alerts and preferences"
-                        onClick={() => navigate("/notifications")}
-                    />
-                    <ProfileRow
-                        icon={FileText}
-                        iconBg="bg-green-50"
-                        iconColor="text-green-600"
-                        label="Statements"
-                        sublabel="Download account statements"
-                        onClick={() => navigate("/transactions")}
-                    />
-                    <ProfileRow
-                        icon={HelpCircle}
-                        iconBg="bg-gray-100"
-                        iconColor="text-gray-500"
-                        label="Help & Support"
-                        sublabel="FAQs, contact us"
-                        onClick={() => navigate("/help")}
-                    />
-                </div>
-
-                {/* ── PIN Section (expandable) ── */}
-                {showPinSection && (
-                    <div className="bg-white rounded-2xl shadow-sm p-5 space-y-5">
-                        <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                            <Lock className="h-4 w-4 text-[#117ACA]" /> Update Transaction PIN
-                        </h2>
-                        <div className="space-y-2">
-                            <Label className="text-xs text-gray-500">New PIN</Label>
-                            <div className="flex justify-center">
-                                <InputOTP maxLength={4} value={newPin} onChange={setNewPin}>
-                                    <InputOTPGroup>
-                                        <InputOTPSlot index={0} />
-                                        <InputOTPSlot index={1} />
-                                        <InputOTPSlot index={2} />
-                                        <InputOTPSlot index={3} />
-                                    </InputOTPGroup>
-                                </InputOTP>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-xs text-gray-500">Confirm PIN</Label>
-                            <div className="flex justify-center">
-                                <InputOTP maxLength={4} value={confirmPin} onChange={setConfirmPin}>
-                                    <InputOTPGroup>
-                                        <InputOTPSlot index={0} />
-                                        <InputOTPSlot index={1} />
-                                        <InputOTPSlot index={2} />
-                                        <InputOTPSlot index={3} />
-                                    </InputOTPGroup>
-                                </InputOTP>
-                            </div>
-                        </div>
-                        {pinMismatch && (
-                            <p className="text-sm text-red-500 text-center flex items-center justify-center gap-1">
-                                <XCircle className="h-4 w-4" /> PINs do not match
-                            </p>
-                        )}
-                        {pinMatch && (
-                            <p className="text-sm text-green-600 text-center flex items-center justify-center gap-1">
-                                <CheckCircle2 className="h-4 w-4" /> PINs match
-                            </p>
-                        )}
-                        <button
-                            onClick={handleSavePin}
-                            disabled={pinLoading || !pinMatch}
-                            className="w-full bg-[#117ACA] text-white font-semibold py-3 rounded-xl hover:bg-[#0f6ab5] transition-colors disabled:opacity-50"
-                        >
-                            {pinLoading ? "Saving..." : "Update PIN"}
-                        </button>
-                    </div>
-                )}
-
-                {/* ── Sign Out ── */}
-                <button
-                    onClick={handleSignOut}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-red-100 text-red-500 font-semibold hover:bg-red-50 transition-colors"
-                >
-                    <LogOut className="h-4 w-4" />
-                    Sign Out
-                </button>
-
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+                <div className="animate-spin h-8 w-8 border-4 border-[#0E76C7] border-t-transparent rounded-full" />
             </div>
-        </DashboardLayout>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-background flex flex-col font-sans">
+            <main className="flex-1 pb-20">
+                {/* Header Section */}
+                <div className="bg-[#0E76C7] px-4 pt-4 pb-16 text-white relative">
+                    <div className="flex items-center justify-between mb-6">
+                        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors">
+                            <ChevronLeft className="w-6 h-6 text-white" />
+                        </button>
+                        <ChaseLogo className="h-6 text-white" style={{ filter: 'brightness(0) invert(1)', width: '100px' }} />
+                        <div className="w-10"></div> 
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold text-white mb-4 border-4 border-white/30 overflow-hidden hover:opacity-90 transition-opacity">
+                                {initial}
+                            </div>
+                            <button className="absolute bottom-3 right-0 w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors">
+                                <Camera className="w-4 h-4 text-[#0E76C7]" />
+                            </button>
+                        </div>
+                        <h1 className="text-2xl font-bold text-white">{fullName}</h1>
+                        <p className="text-white/70 text-sm">Chase Premier Member</p>
+                    </div>
+                </div>
+
+                {/* Content Section */}
+                <div className="px-4 -mt-8 relative z-10 space-y-4">
+                    {/* Personal Information */}
+                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div className="p-6 pb-2">
+                            <h3 className="font-semibold tracking-tight text-lg flex items-center gap-2">
+                                <User className="w-5 h-5 text-[#0E76C7]" />
+                                Personal Information
+                            </h3>
+                        </div>
+                        <div className="px-6 pb-6 space-y-4">
+                            <div className="flex items-center justify-between py-3 border-b border-border/50">
+                                <div className="flex items-center gap-3">
+                                    <Mail className="w-5 h-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Email</p>
+                                        <p className="font-semibold text-sm">{email}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between py-3">
+                                <div className="flex items-center gap-3">
+                                    <Phone className="w-5 h-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Phone</p>
+                                        <p className="font-semibold text-sm">{phone}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Account Details */}
+                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div className="p-6 pb-2">
+                            <h3 className="font-semibold tracking-tight text-lg flex items-center gap-2">
+                                <CreditCard className="w-5 h-5 text-[#0E76C7]" />
+                                Account Details
+                            </h3>
+                        </div>
+                        <div className="p-6 pt-0 space-y-6">
+                            {accounts.length === 0 ? (
+                                <p className="text-center py-6 text-muted-foreground text-sm italic">No accounts found</p>
+                            ) : (
+                                accounts.map((account, index) => (
+                                    <div key={account.id} className={cn("py-4", index !== 0 && "border-t border-border/50")}>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="font-bold text-sm text-foreground uppercase tracking-tight">
+                                                {account.account_type === 'checking' ? 'TOTAL CHECKING' : 
+                                                 account.account_type === 'savings' ? 'CHASE SAVINGS' : 'CURRENT ACCOUNT'}
+                                            </h4>
+                                            <span className="text-xl font-bold text-gray-900">
+                                                ${Number(account.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2 text-xs">
+                                            <div className="flex justify-between bg-muted/40 p-2.5 rounded-lg border border-border/10">
+                                                <span className="text-muted-foreground">Account Number</span>
+                                                <span className="font-mono font-medium">{account.account_number}</span>
+                                            </div>
+                                            <div className="flex justify-between bg-muted/40 p-2.5 rounded-lg border border-border/10">
+                                                <span className="text-muted-foreground">Routing Number</span>
+                                                <span className="font-mono font-medium">021000021</span>
+                                            </div>
+                                            <div className="flex justify-between bg-muted/40 p-2.5 rounded-lg border border-border/10">
+                                                <span className="text-muted-foreground">ACH Number</span>
+                                                <span className="font-mono font-medium">{account.account_number}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Quick Access Links 
+                    <div className="d-none rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+                        <button className="w-full flex items-center justify-between px-6 py-5 border-b border-border/50 hover:bg-muted/30 transition-colors group">
+                            <div className="flex items-center gap-3">
+                                <Shield className="w-5 h-5 text-[#0E76C7]" />
+                                <span className="font-medium text-sm">Security & Privacy</span>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                        <button className="w-full flex items-center justify-between px-6 py-5 hover:bg-muted/30 transition-colors group">
+                            <div className="flex items-center gap-3">
+                                <Building className="w-5 h-5 text-[#0E76C7]" />
+                                <span className="font-medium text-sm">Branch & ATM Locations</span>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                    </div> */}
+
+                    {/* Sign Out Button */}
+                    <button
+                        onClick={handleSignOut}
+                        className="w-full h-14 flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white text-red-600 font-bold hover:bg-red-50 transition-colors active:scale-[0.98] mt-4 mb-20"
+                    >
+                        <LogOut className="w-5 h-5" />
+                        Sign Out
+                    </button>
+                </div>
+            </main>
+
+            {/* Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 h-20 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] focus:outline-none">
+                <div className="flex items-center justify-around h-full px-2">
+                    <button onClick={() => navigate('/accounts')} className="flex flex-col items-center gap-1.5 py-2 px-4 min-w-[80px] text-muted-foreground hover:text-[#0E76C7] transition-colors">
+                        <CreditCard className="w-6 h-6" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Accounts</span>
+                    </button>
+                    <button onClick={() => navigate('/transfer')} className="flex flex-col items-center gap-1.5 py-2 px-4 min-w-[80px] text-muted-foreground hover:text-[#0E76C7] transition-colors">
+                        <RefreshCw className="w-6 h-6" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Pay & Collect</span>
+                    </button>
+                    <button onClick={() => navigate('/transactions')} className="flex flex-col items-center gap-1.5 py-2 px-4 min-w-[80px] text-muted-foreground hover:text-[#0E76C7] transition-colors">
+                        <FileText className="w-6 h-6" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Transactions</span>
+                    </button>
+                </div>
+            </nav>
+        </div>
     );
 };
-
-// ── Row helper ────────────────────────────────────────────────────────────────
-const ProfileRow = ({
-    icon: Icon,
-    iconBg,
-    iconColor,
-    label,
-    sublabel,
-    onClick,
-}: {
-    icon: any;
-    iconBg: string;
-    iconColor: string;
-    label: string;
-    sublabel: string;
-    onClick: () => void;
-}) => (
-    <button
-        onClick={onClick}
-        className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors text-left group"
-    >
-        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0", iconBg)}>
-            <Icon className={cn("h-5 w-5", iconColor)} />
-        </div>
-        <div className="flex-1 min-w-0">
-            <p className="font-semibold text-gray-900 text-sm">{label}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{sublabel}</p>
-        </div>
-        <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
-    </button>
-);
 
 export default Profile;

@@ -72,7 +72,7 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#117ACA] items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0E76C7] items-center justify-center p-12">
         <div className="text-white max-w-md">
           <div className="mb-8">
             <ChaseLogo className="h-14 w-auto text-white" />

@@ -13,7 +13,7 @@ function typeConfig(type: string) {
         case "success": return { Icon: CheckCircle2, bg: "bg-green-100", color: "text-green-600", border: "border-green-200" };
         case "warning": return { Icon: AlertTriangle, bg: "bg-amber-100", color: "text-amber-600", border: "border-amber-200" };
         case "alert": return { Icon: AlertOctagon, bg: "bg-red-100", color: "text-red-500", border: "border-red-200" };
-        default: return { Icon: Info, bg: "bg-blue-100", color: "text-[#117ACA]", border: "border-blue-200" };
+        default: return { Icon: Info, bg: "bg-blue-100", color: "text-[#0E76C7]", border: "border-blue-200" };
     }
 }
 
