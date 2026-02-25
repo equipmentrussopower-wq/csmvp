@@ -91,6 +91,27 @@ const Admin = () => {
     }
   };
 
+  const approveTransaction = async (txnId: string) => {
+    const { error } = await supabase.rpc("admin_approve_transaction", { p_transaction_id: txnId });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "✓ Transaction Approved", description: "Funds have been moved and status set to completed." });
+      fetchAll();
+    }
+  };
+
+  const cancelTransaction = async (txnId: string) => {
+    if (!window.confirm("Cancel this pending transaction? No money will be moved.")) return;
+    const { error } = await supabase.rpc("admin_cancel_transaction", { p_transaction_id: txnId });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Transaction Cancelled", description: "Pending transaction has been cancelled.", variant: "destructive" });
+      fetchAll();
+    }
+  };
+
   const handleAdjust = async () => {
     const { error } = await supabase.rpc("admin_adjust_balance", {
       p_account_id: adjustAccountId,
@@ -707,7 +728,19 @@ const Admin = () => {
           {/* Transactions Tab */}
           <TabsContent value="transactions">
             <Card>
-              <CardHeader><CardTitle>All Transactions ({transactions.length})</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>All Transactions ({transactions.length})</span>
+                  <div className="flex gap-2 text-xs">
+                    <span className="bg-yellow-100 text-yellow-700 font-semibold px-2 py-1 rounded-full">
+                      ⏳ {transactions.filter(t => t.status === "pending").length} Pending
+                    </span>
+                    <span className="bg-green-100 text-green-700 font-semibold px-2 py-1 rounded-full">
+                      ✓ {transactions.filter(t => t.status === "completed").length} Completed
+                    </span>
+                  </div>
+                </CardTitle>
+              </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
@@ -716,29 +749,58 @@ const Admin = () => {
                       <TableHead>Type</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Narration</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {transactions.map((t) => (
-                      <TableRow key={t.id}>
+                      <TableRow key={t.id} className={t.status === "pending" ? "bg-yellow-50/60" : ""}>
                         <TableCell className="font-mono text-xs">{t.reference_code}</TableCell>
                         <TableCell className="capitalize">{t.transaction_type}</TableCell>
                         <TableCell className="font-semibold">${Number(t.amount).toFixed(2)}</TableCell>
                         <TableCell>
-                          <Badge variant={t.status === "completed" ? "default" : t.status === "reversed" ? "destructive" : "secondary"}>
-                            {t.status}
+                          <Badge
+                            variant={
+                              t.status === "completed" ? "default"
+                                : t.status === "reversed" ? "destructive"
+                                  : "secondary"
+                            }
+                            className={t.status === "pending" ? "bg-yellow-100 text-yellow-800 border-yellow-300" : ""}
+                          >
+                            {t.status === "pending" ? "⏳ Pending" : t.status}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[160px] truncate">{t.narration || "—"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          {t.status === "completed" && (
-                            <Button size="sm" variant="outline" onClick={() => reverseTransaction(t.id)}>
-                              <RotateCcw className="h-3 w-3 mr-1" />
-                              Reverse
-                            </Button>
-                          )}
+                          <div className="flex gap-1.5">
+                            {t.status === "pending" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white h-7 px-2 text-xs"
+                                  onClick={() => approveTransaction(t.id)}
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" /> Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() => cancelTransaction(t.id)}
+                                >
+                                  <XCircle className="h-3 w-3 mr-1" /> Cancel
+                                </Button>
+                              </>
+                            )}
+                            {t.status === "completed" && (
+                              <Button size="sm" variant="outline" onClick={() => reverseTransaction(t.id)} className="h-7 px-2 text-xs">
+                                <RotateCcw className="h-3 w-3 mr-1" /> Reverse
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
