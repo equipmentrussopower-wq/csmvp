@@ -26,7 +26,7 @@ const mobileNavItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/accounts", label: "Accounts", icon: CreditCard },
   { href: "/cards", label: "Cards", icon: CreditCard },
-  { href: "/transfer", label: "Pay", icon: ArrowLeftRight },
+  { href: "/transfer", label: "Wire", icon: ArrowLeftRight },
   { href: "/transactions", label: "History", icon: History },
 ];
 
