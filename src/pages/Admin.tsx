@@ -185,7 +185,7 @@ const Admin = () => {
 
   const handleSaveSecurity = async () => {
     if (!selectedUserForSecurity) return;
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from("profiles")
       .update({
         is_cot_active: cotActive,
@@ -193,12 +193,19 @@ const Admin = () => {
         is_secure_id_active: secureIdActive,
         secure_id_code: secureIdCode || null,
       })
-      .eq("id", selectedUserForSecurity.id);
+      .eq("id", selectedUserForSecurity.id)
+      .select("id", { count: "exact" });
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else if (count === 0) {
+      toast({
+        title: "Permission Denied",
+        description: "Update blocked by database policy. Run the admin profile update SQL in Supabase.",
+        variant: "destructive"
+      });
     } else {
-      toast({ title: "Success", description: "Security settings updated." });
+      toast({ title: "✓ Security settings saved", description: `COT: ${cotActive ? "Active" : "Off"} · SecureID: ${secureIdActive ? "Active" : "Off"}` });
       setSelectedUserForSecurity(null);
       fetchAll();
     }
