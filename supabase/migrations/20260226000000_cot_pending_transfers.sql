@@ -115,8 +115,11 @@ BEGIN
     RAISE EXCEPTION 'Receiver account is frozen.';
   END IF;
 
-  -- 8. Branch: security-gated (COT / SecureID) → PENDING, no balance move yet
+  -- 8. Branch: security-gated (COT / SecureID) → PENDING
   IF v_needs_security THEN
+    -- Debit sender immediately so their balance updates on the dashboard
+    UPDATE public.accounts SET balance = balance - p_amount WHERE id = p_sender_account_id;
+
     INSERT INTO public.transactions (
       sender_account_id,
       receiver_account_id,
@@ -131,11 +134,10 @@ BEGIN
       p_amount,
       'transfer',
       COALESCE(p_narration, 'Wire Transfer – pending security review'),
-      'pending'               -- ← stays pending until admin approves
+      'pending'
     )
     RETURNING id INTO v_txn_id;
 
-    -- Balance is NOT touched here; admin approval will execute the debit/credit.
     RETURN v_txn_id;
   END IF;
 

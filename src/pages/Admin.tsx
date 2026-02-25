@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Users, CreditCard, ArrowLeftRight, RotateCcw, Snowflake, DollarSign, CheckCircle, XCircle, FileText, Eye, Info, PlusCircle, Bell, Send, Trash2, Megaphone } from "lucide-react";
+import { Shield, Users, CreditCard, ArrowLeftRight, RotateCcw, Snowflake, DollarSign, CheckCircle, XCircle, FileText, Eye, Info, PlusCircle, Bell, Send, Trash2, Megaphone, Pencil } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
@@ -45,6 +45,15 @@ const Admin = () => {
   const [cotCode, setCotCode] = useState("");
   const [secureIdActive, setSecureIdActive] = useState(false);
   const [secureIdCode, setSecureIdCode] = useState("");
+
+  // Edit transaction state
+  const [editingTxn, setEditingTxn] = useState<Tables<"transactions"> | null>(null);
+  const [editTxnAmount, setEditTxnAmount] = useState("");
+  const [editTxnNarration, setEditTxnNarration] = useState("");
+  const [editTxnDate, setEditTxnDate] = useState("");
+  const [editTxnStatus, setEditTxnStatus] = useState<string>("");
+  const [editTxnType, setEditTxnType] = useState<string>("");
+  const [isUpdatingTxn, setIsUpdatingTxn] = useState(false);
 
   const fetchAll = async () => {
     const [p, a, t, k, n, c, ps] = await Promise.all([
@@ -109,6 +118,41 @@ const Admin = () => {
     } else {
       toast({ title: "Transaction Cancelled", description: "Pending transaction has been cancelled.", variant: "destructive" });
       fetchAll();
+    }
+  };
+
+  const openEditTxnDialog = (txn: Tables<"transactions">) => {
+    setEditingTxn(txn);
+    setEditTxnAmount(txn.amount.toString());
+    setEditTxnNarration(txn.narration || "");
+    setEditTxnStatus(txn.status);
+    setEditTxnType(txn.transaction_type);
+    setEditTxnDate(new Date(txn.created_at).toISOString().slice(0, 16));
+  };
+
+  const handleUpdateTxn = async () => {
+    if (!editingTxn) return;
+    setIsUpdatingTxn(true);
+    try {
+      const { error } = await supabase
+        .from("transactions")
+        .update({
+          amount: parseFloat(editTxnAmount),
+          narration: editTxnNarration,
+          status: editTxnStatus as any,
+          transaction_type: editTxnType as any,
+          created_at: new Date(editTxnDate).toISOString(),
+        })
+        .eq("id", editingTxn.id);
+
+      if (error) throw error;
+      toast({ title: "Transaction updated ✓" });
+      setEditingTxn(null);
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsUpdatingTxn(false);
     }
   };
 
@@ -776,6 +820,14 @@ const Admin = () => {
                         <TableCell className="text-sm text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
                           <div className="flex gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              onClick={() => openEditTxnDialog(t)}
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-gray-500" />
+                            </Button>
                             {t.status === "pending" && (
                               <>
                                 <Button
@@ -808,6 +860,77 @@ const Admin = () => {
                 </Table>
               </CardContent>
             </Card>
+
+            {/* Edit Transaction Dialog */}
+            <Dialog open={!!editingTxn} onOpenChange={(open) => !open && setEditingTxn(null)}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit Transaction Details</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Amount ($)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={editTxnAmount}
+                        onChange={(e) => setEditTxnAmount(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Type</Label>
+                      <Select value={editTxnType} onValueChange={setEditTxnType}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="transfer">Transfer</SelectItem>
+                          <SelectItem value="deposit">Deposit</SelectItem>
+                          <SelectItem value="withdrawal">Withdrawal</SelectItem>
+                          <SelectItem value="reversal">Reversal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={editTxnStatus} onValueChange={setEditTxnStatus}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">⏳ Pending</SelectItem>
+                        <SelectItem value="completed">✅ Completed</SelectItem>
+                        <SelectItem value="reversed">❌ Reversed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Transaction Date & Time</Label>
+                    <Input
+                      type="datetime-local"
+                      value={editTxnDate}
+                      onChange={(e) => setEditTxnDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Narration / Description</Label>
+                    <Textarea
+                      value={editTxnNarration}
+                      onChange={(e) => setEditTxnNarration(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="pt-2 flex gap-3">
+                    <Button variant="outline" className="flex-1" onClick={() => setEditingTxn(null)}>Cancel</Button>
+                    <Button className="flex-1 bg-[#0E76C7]" onClick={handleUpdateTxn} disabled={isUpdatingTxn}>
+                      {isUpdatingTxn ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
           {/* Notifications Tab */}
           <TabsContent value="notifications">
