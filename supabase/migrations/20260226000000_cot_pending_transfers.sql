@@ -1,10 +1,10 @@
 -- ============================================================
--- COT / SecureID Transactions → Always "pending" on dashboard
+-- Update: ALL Wire Transfers → Always "pending" 
 -- ============================================================
--- When a transfer requires COT or Secure ID verification,
--- the transaction is recorded as 'pending' and the balance is
--- NOT moved immediately. The admin must approve/complete it.
--- Only plain PIN-only transfers complete instantly.
+-- This ensures every transfer (internal or external) starts in 
+-- a 'pending' state. Money is deducted from the sender's
+-- balance immediately, but arrival at the destination
+-- requires admin approval.
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION public.transfer_with_pin(
@@ -32,7 +32,6 @@ DECLARE
   v_sender_status         account_status;
   v_sender_user_id        UUID;
   v_receiver_status       account_status;
-  v_needs_security        BOOLEAN;
   v_txn_id                UUID;
 BEGIN
 
@@ -82,10 +81,7 @@ BEGIN
     END IF;
   END IF;
 
-  -- 5. Determine if this transfer goes through a security layer
-  v_needs_security := v_is_cot_active OR v_is_secure_id_active;
-
-  -- 6. Validate sender account
+  -- 5. Validate sender account
   SELECT balance, status, user_id
   INTO v_sender_balance, v_sender_status, v_sender_user_id
   FROM public.accounts WHERE id = p_sender_account_id FOR UPDATE;
@@ -106,47 +102,24 @@ BEGIN
     RAISE EXCEPTION 'Insufficient funds.';
   END IF;
 
-  -- 7. Validate receiver account
-  SELECT status INTO v_receiver_status
-  FROM public.accounts WHERE id = p_receiver_account_id FOR UPDATE;
+  -- 6. Check receiver account (if internal)
+  IF p_receiver_account_id IS NOT NULL AND p_receiver_account_id != p_sender_account_id THEN
+    SELECT status INTO v_receiver_status
+    FROM public.accounts WHERE id = p_receiver_account_id FOR UPDATE;
 
-  -- Note: receiver may be NULL/external for wire transfers – only validate if present
-  IF FOUND AND v_receiver_status = 'frozen' THEN
-    RAISE EXCEPTION 'Receiver account is frozen.';
+    IF FOUND AND v_receiver_status = 'frozen' THEN
+      RAISE EXCEPTION 'Receiver account is frozen.';
+    END IF;
   END IF;
 
-  -- 8. Branch: security-gated (COT / SecureID) → PENDING
-  IF v_needs_security THEN
-    -- Debit sender immediately so their balance updates on the dashboard
-    UPDATE public.accounts SET balance = balance - p_amount WHERE id = p_sender_account_id;
-
-    INSERT INTO public.transactions (
-      sender_account_id,
-      receiver_account_id,
-      amount,
-      transaction_type,
-      narration,
-      status
-    )
-    VALUES (
-      p_sender_account_id,
-      p_receiver_account_id,
-      p_amount,
-      'transfer',
-      COALESCE(p_narration, 'Wire Transfer – pending security review'),
-      'pending'
-    )
-    RETURNING id INTO v_txn_id;
-
-    RETURN v_txn_id;
-  END IF;
-
-  -- 9. Plain PIN-only transfer → complete instantly (legacy path)
+  -- 7. Execute 'Pending' Transfer
+  -- Always deduct balance immediately
   UPDATE public.accounts SET balance = balance - p_amount WHERE id = p_sender_account_id;
-  UPDATE public.accounts SET balance = balance + p_amount WHERE id = p_receiver_account_id;
 
   INSERT INTO public.transactions (
     sender_account_id,
+    -- If p_receiver_account_id is the sender, it means it's an external wire
+    -- We record it as NULL for the external receiver side in the DB
     receiver_account_id,
     amount,
     transaction_type,
@@ -155,11 +128,14 @@ BEGIN
   )
   VALUES (
     p_sender_account_id,
-    p_receiver_account_id,
+    CASE 
+      WHEN p_receiver_account_id = p_sender_account_id THEN NULL 
+      ELSE p_receiver_account_id 
+    END,
     p_amount,
     'transfer',
-    p_narration,
-    'completed'
+    COALESCE(p_narration, 'Wire Transfer'),
+    'pending'
   )
   RETURNING id INTO v_txn_id;
 
