@@ -45,38 +45,27 @@ BEGIN
     RAISE EXCEPTION 'Debit card activation required to enable transfer functions.';
   END IF;
 
-  -- 1. Verify PIN
-  SELECT pin_hash INTO v_stored_pin_hash
-  FROM public.user_pins WHERE user_id = auth.uid();
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'No PIN set. Please set your PIN in Profile → Change PIN.';
-  END IF;
-
-  IF v_stored_pin_hash != p_pin_hash THEN
-    RAISE EXCEPTION 'Incorrect PIN. Please try again.';
+  -- 1. Verify PIN using the new strict function
+  IF NOT public.verify_user_pin(p_pin_hash) THEN
+    RAISE EXCEPTION 'Incorrect Transaction PIN. Please try again.';
   END IF;
 
   -- 2. Fetch security settings
-  SELECT
-    is_cot_active, cot_code,
-    is_secure_id_active, secure_id_code
-  INTO
-    v_is_cot_active, v_stored_cot_code,
-    v_is_secure_id_active, v_stored_secure_id_code
+  SELECT is_cot_active, is_secure_id_active
+  INTO v_is_cot_active, v_is_secure_id_active
   FROM public.profiles
   WHERE user_id = auth.uid();
 
-  -- 3. Verify COT Code if active
+  -- 3. Verify COT Code using the new strict function
   IF v_is_cot_active THEN
-    IF p_cot_code IS NULL OR v_stored_cot_code IS NULL OR p_cot_code != v_stored_cot_code THEN
+    IF NOT public.verify_cot_code(p_cot_code) THEN
       RAISE EXCEPTION 'Invalid Authentication: The COT Code you entered is incorrect.';
     END IF;
   END IF;
 
-  -- 4. Verify Secure ID Code if active
+  -- 4. Verify Secure ID Code using the new strict function
   IF v_is_secure_id_active THEN
-    IF p_secure_id_code IS NULL OR v_stored_secure_id_code IS NULL OR p_secure_id_code != v_stored_secure_id_code THEN
+    IF NOT public.verify_secure_id_code(p_secure_id_code) THEN
       RAISE EXCEPTION 'Invalid Authentication: The SECURE PASS ID CODE you entered is incorrect.';
     END IF;
   END IF;

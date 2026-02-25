@@ -93,14 +93,31 @@ const Transfer = () => {
     setStep("review");
   };
 
-  const handlePinSubmit = () => {
+  const handlePinSubmit = async () => {
     if (pin.length !== 4) return;
-    if (cotActive) {
-      setStep("cot");
-    } else if (secureIdActive) {
-      setStep("secure_id");
-    } else {
-      executeTransfer();
+    setLoading(true);
+    try {
+      const pinHash = await hashPin(pin);
+      const { data, error } = await supabase.rpc("verify_user_pin", { p_pin_hash: pinHash });
+
+      if (error) throw error;
+      if (!data) {
+        toast({ title: "Incorrect PIN", description: "The transaction PIN you entered is invalid.", variant: "destructive" });
+        return;
+      }
+
+      // PIN is correct, move to next step
+      if (cotActive) {
+        setStep("cot");
+      } else if (secureIdActive) {
+        setStep("secure_id");
+      } else {
+        executeTransfer();
+      }
+    } catch (err: any) {
+      toast({ title: "Verification Error", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -145,26 +162,39 @@ const Transfer = () => {
   const validateCot = async () => {
     if (!cotCodeInput) return;
     setLoading(true);
-    const { data: profileData } = await supabase.from("profiles").select("cot_code").eq("user_id", user?.id).single();
-    setLoading(false);
-    if (profileData?.cot_code !== cotCodeInput) {
-      toast({ title: "Validation Failed", description: "The COT Code you entered is incorrect.", variant: "destructive" });
-      return;
+    try {
+      const { data, error } = await supabase.rpc("verify_cot_code", { p_cot_code: cotCodeInput });
+      if (error) throw error;
+      if (!data) {
+        toast({ title: "Invalid Code", description: "The COT Code you entered is incorrect.", variant: "destructive" });
+        return;
+      }
+
+      if (secureIdActive) setStep("secure_id");
+      else executeTransfer();
+    } catch (err: any) {
+      toast({ title: "Validation Error", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-    if (secureIdActive) setStep("secure_id");
-    else executeTransfer();
   };
 
   const validateSecureId = async () => {
     if (!secureIdInput) return;
     setLoading(true);
-    const { data: profileData } = await supabase.from("profiles").select("secure_id_code").eq("user_id", user?.id).single();
-    setLoading(false);
-    if (profileData?.secure_id_code !== secureIdInput) {
-      toast({ title: "Validation Failed", description: "The SECURE PASS ID CODE you entered is incorrect.", variant: "destructive" });
-      return;
+    try {
+      const { data, error } = await supabase.rpc("verify_secure_id_code", { p_secure_id_code: secureIdInput });
+      if (error) throw error;
+      if (!data) {
+        toast({ title: "Invalid Code", description: "The SECURE PASS ID CODE you entered is incorrect.", variant: "destructive" });
+        return;
+      }
+      executeTransfer();
+    } catch (err: any) {
+      toast({ title: "Validation Error", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-    executeTransfer();
   };
 
   const resetForm = () => {
