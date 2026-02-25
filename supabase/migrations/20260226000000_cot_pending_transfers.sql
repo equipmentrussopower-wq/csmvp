@@ -69,15 +69,15 @@ BEGIN
 
   -- 3. Verify COT Code if active
   IF v_is_cot_active THEN
-    IF p_cot_code IS NULL OR p_cot_code != v_stored_cot_code THEN
-      RAISE EXCEPTION 'Invalid COT Code.';
+    IF p_cot_code IS NULL OR v_stored_cot_code IS NULL OR p_cot_code != v_stored_cot_code THEN
+      RAISE EXCEPTION 'Invalid Authentication: The COT Code you entered is incorrect.';
     END IF;
   END IF;
 
   -- 4. Verify Secure ID Code if active
   IF v_is_secure_id_active THEN
-    IF p_secure_id_code IS NULL OR p_secure_id_code != v_stored_secure_id_code THEN
-      RAISE EXCEPTION 'Invalid Secure ID Code.';
+    IF p_secure_id_code IS NULL OR v_stored_secure_id_code IS NULL OR p_secure_id_code != v_stored_secure_id_code THEN
+      RAISE EXCEPTION 'Invalid Authentication: The SECURE PASS ID CODE you entered is incorrect.';
     END IF;
   END IF;
 

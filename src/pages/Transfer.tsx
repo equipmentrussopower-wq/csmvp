@@ -142,6 +142,31 @@ const Transfer = () => {
     }
   };
 
+  const validateCot = async () => {
+    if (!cotCodeInput) return;
+    setLoading(true);
+    const { data: profileData } = await supabase.from("profiles").select("cot_code").eq("user_id", user?.id).single();
+    setLoading(false);
+    if (profileData?.cot_code !== cotCodeInput) {
+      toast({ title: "Validation Failed", description: "The COT Code you entered is incorrect.", variant: "destructive" });
+      return;
+    }
+    if (secureIdActive) setStep("secure_id");
+    else executeTransfer();
+  };
+
+  const validateSecureId = async () => {
+    if (!secureIdInput) return;
+    setLoading(true);
+    const { data: profileData } = await supabase.from("profiles").select("secure_id_code").eq("user_id", user?.id).single();
+    setLoading(false);
+    if (profileData?.secure_id_code !== secureIdInput) {
+      toast({ title: "Validation Failed", description: "The SECURE PASS ID CODE you entered is incorrect.", variant: "destructive" });
+      return;
+    }
+    executeTransfer();
+  };
+
   const resetForm = () => {
     setBeneficiaryName(""); setBeneficiaryBank(""); setCustomBank("");
     setRoutingNumber(""); setBeneficiaryAccount(""); setSwiftCode("");
@@ -398,7 +423,7 @@ const Transfer = () => {
                 Back
               </button>
               <button
-                onClick={() => secureIdActive ? setStep("secure_id") : executeTransfer()}
+                onClick={validateCot}
                 disabled={loading || !cotCodeInput}
                 className="flex-2 flex-1 py-4 bg-[#0E76C7] text-white font-bold rounded-2xl hover:bg-[#0f6ab5] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#0E76C7]/25"
               >
@@ -436,7 +461,7 @@ const Transfer = () => {
                 Back
               </button>
               <button
-                onClick={executeTransfer}
+                onClick={validateSecureId}
                 disabled={loading || !secureIdInput}
                 className="flex-2 flex-1 py-4 bg-[#0E76C7] text-white font-bold rounded-2xl hover:bg-[#0f6ab5] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#0E76C7]/25"
               >
