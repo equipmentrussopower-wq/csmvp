@@ -2,9 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  ChevronLeft, Camera, User, Mail, Phone, CreditCard, 
-  Shield, Building, LogOut, ChevronRight, RefreshCw, FileText
+import {
+    ChevronLeft, Camera, User, Mail, Phone, CreditCard,
+    LogOut, KeyRound, ChevronRight,
+    LayoutDashboard, ArrowLeftRight, History
 } from "lucide-react";
 import ChaseLogo from "@/components/ChaseLogo";
 import type { Tables } from "@/integrations/supabase/types";
@@ -58,7 +59,7 @@ const Profile = () => {
                             <ChevronLeft className="w-6 h-6 text-white" />
                         </button>
                         <ChaseLogo className="h-6 text-white" style={{ filter: 'brightness(0) invert(1)', width: '100px' }} />
-                        <div className="w-10"></div> 
+                        <div className="w-10"></div>
                     </div>
 
                     <div className="flex flex-col items-center">
@@ -123,8 +124,8 @@ const Profile = () => {
                                     <div key={account.id} className={cn("py-4", index !== 0 && "border-t border-border/50")}>
                                         <div className="flex items-center justify-between mb-3">
                                             <h4 className="font-bold text-sm text-foreground uppercase tracking-tight">
-                                                {account.account_type === 'checking' ? 'TOTAL CHECKING' : 
-                                                 account.account_type === 'savings' ? 'CHASE SAVINGS' : 'CURRENT ACCOUNT'}
+                                                {account.account_type === 'checking' ? 'TOTAL CHECKING' :
+                                                    account.account_type === 'savings' ? 'CHASE SAVINGS' : 'CURRENT ACCOUNT'}
                                             </h4>
                                             <span className="text-xl font-bold text-gray-900">
                                                 ${Number(account.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -150,23 +151,24 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    {/* Quick Access Links 
-                    <div className="d-none rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
-                        <button className="w-full flex items-center justify-between px-6 py-5 border-b border-border/50 hover:bg-muted/30 transition-colors group">
+                    {/* ── Change PIN ── */}
+                    <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+                        <button
+                            onClick={() => navigate("/change-pin")}
+                            className="w-full flex items-center justify-between px-6 py-5 hover:bg-muted/30 transition-colors group"
+                        >
                             <div className="flex items-center gap-3">
-                                <Shield className="w-5 h-5 text-[#0E76C7]" />
-                                <span className="font-medium text-sm">Security & Privacy</span>
+                                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+                                    <KeyRound className="w-4 h-4 text-[#0E76C7]" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-semibold text-sm text-gray-900">Change Transaction PIN</p>
+                                    <p className="text-xs text-muted-foreground">Update your 4-digit transfer PIN</p>
+                                </div>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:translate-x-0.5 transition-transform" />
+                            <ChevronRight className="w-5 h-5 text-muted-foreground/40 group-hover:translate-x-0.5 transition-transform" />
                         </button>
-                        <button className="w-full flex items-center justify-between px-6 py-5 hover:bg-muted/30 transition-colors group">
-                            <div className="flex items-center gap-3">
-                                <Building className="w-5 h-5 text-[#0E76C7]" />
-                                <span className="font-medium text-sm">Branch & ATM Locations</span>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:translate-x-0.5 transition-transform" />
-                        </button>
-                    </div> */}
+                    </div>
 
                     {/* Sign Out Button */}
                     <button
@@ -180,20 +182,24 @@ const Profile = () => {
             </main>
 
             {/* Bottom Navigation */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 h-20 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] focus:outline-none">
-                <div className="flex items-center justify-around h-full px-2">
-                    <button onClick={() => navigate('/accounts')} className="flex flex-col items-center gap-1.5 py-2 px-4 min-w-[80px] text-muted-foreground hover:text-[#0E76C7] transition-colors">
-                        <CreditCard className="w-6 h-6" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Accounts</span>
-                    </button>
-                    <button onClick={() => navigate('/transfer')} className="flex flex-col items-center gap-1.5 py-2 px-4 min-w-[80px] text-muted-foreground hover:text-[#0E76C7] transition-colors">
-                        <RefreshCw className="w-6 h-6" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Pay & Collect</span>
-                    </button>
-                    <button onClick={() => navigate('/transactions')} className="flex flex-col items-center gap-1.5 py-2 px-4 min-w-[80px] text-muted-foreground hover:text-[#0E76C7] transition-colors">
-                        <FileText className="w-6 h-6" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Transactions</span>
-                    </button>
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 h-20 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-around h-full px-1">
+                    {[
+                        { href: "/dashboard", label: "Home", Icon: LayoutDashboard },
+                        { href: "/accounts", label: "Accounts", Icon: CreditCard },
+                        { href: "/cards", label: "Cards", Icon: CreditCard },
+                        { href: "/transfer", label: "Wire", Icon: ArrowLeftRight },
+                        { href: "/transactions", label: "History", Icon: History },
+                    ].map(({ href, label, Icon }) => (
+                        <button
+                            key={href}
+                            onClick={() => navigate(href)}
+                            className="flex flex-col items-center gap-1 py-2 px-2 min-w-[56px] text-muted-foreground hover:text-[#0E76C7] transition-colors"
+                        >
+                            <Icon className="w-5 h-5" />
+                            <span className="text-[9px] font-bold uppercase tracking-wider">{label}</span>
+                        </button>
+                    ))}
                 </div>
             </nav>
         </div>
