@@ -161,12 +161,26 @@ const Admin = () => {
     }
   };
 
-  const openSecurityDialog = (profile: Tables<"profiles">) => {
+  const openSecurityDialog = async (profile: Tables<"profiles">) => {
+    // Always fetch fresh data from DB — never trust cached state
     setSelectedUserForSecurity(profile);
-    setCotActive(profile.is_cot_active || false);
-    setCotCode(profile.cot_code || "");
-    setSecureIdActive(profile.is_secure_id_active || false);
-    setSecureIdCode(profile.secure_id_code || "");
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("is_cot_active, cot_code, is_secure_id_active, secure_id_code")
+      .eq("id", profile.id)
+      .single();
+    if (data) {
+      setCotActive(data.is_cot_active ?? false);
+      setCotCode(data.cot_code ?? "");
+      setSecureIdActive(data.is_secure_id_active ?? false);
+      setSecureIdCode(data.secure_id_code ?? "");
+    } else {
+      // Fallback to cached
+      setCotActive(profile.is_cot_active ?? false);
+      setCotCode(profile.cot_code ?? "");
+      setSecureIdActive(profile.is_secure_id_active ?? false);
+      setSecureIdCode(profile.secure_id_code ?? "");
+    }
   };
 
   const handleSaveSecurity = async () => {
@@ -385,57 +399,78 @@ const Admin = () => {
                                 <DialogTitle>Security Settings — {selectedUserForSecurity?.full_name}</DialogTitle>
                               </DialogHeader>
                               <div className="space-y-6 py-4">
-                                <div className="space-y-4 border p-4 rounded-lg bg-red-50/50">
+
+                                {/* ── COT Code Section ── */}
+                                <div className="space-y-3 border p-4 rounded-lg bg-red-50/50">
                                   <div className="flex items-center justify-between">
-                                    <Label className="flex items-center gap-2">
+                                    <Label className="flex items-center gap-2 cursor-pointer">
                                       <input
                                         type="checkbox"
                                         checked={cotActive}
                                         onChange={(e) => setCotActive(e.target.checked)}
-                                        className="h-4 w-4"
+                                        className="h-4 w-4 accent-red-600"
                                       />
-                                      Enable COT Code
+                                      <span className="font-semibold">Enable COT Code</span>
                                     </Label>
-                                    <Badge variant={cotActive ? "destructive" : "outline"}>{cotActive ? "Active" : "Inactive"}</Badge>
+                                    <Badge variant={cotActive ? "destructive" : "outline"}>
+                                      {cotActive ? "🔴 ACTIVE" : "Inactive"}
+                                    </Badge>
                                   </div>
-                                  {cotActive && (
-                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                                      <Label>COT Code</Label>
-                                      <Input
-                                        value={cotCode}
-                                        onChange={(e) => setCotCode(e.target.value)}
-                                        placeholder="Enter COT Code"
-                                      />
+
+                                  {/* Current code display — always visible */}
+                                  {cotCode && (
+                                    <div className="flex items-center justify-between bg-white border border-red-200 rounded-md px-3 py-2">
+                                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Current Code</span>
+                                      <span className="font-mono font-bold text-red-700 text-sm tracking-widest">{cotCode}</span>
                                     </div>
                                   )}
+
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">{cotCode ? "Update COT Code" : "Set COT Code"}</Label>
+                                    <Input
+                                      value={cotCode}
+                                      onChange={(e) => setCotCode(e.target.value)}
+                                      placeholder="Enter COT Code (e.g. COT-4872)"
+                                    />
+                                  </div>
                                 </div>
 
-                                <div className="space-y-4 border p-4 rounded-lg bg-blue-50/50">
+                                {/* ── Secure ID Section ── */}
+                                <div className="space-y-3 border p-4 rounded-lg bg-blue-50/50">
                                   <div className="flex items-center justify-between">
-                                    <Label className="flex items-center gap-2">
+                                    <Label className="flex items-center gap-2 cursor-pointer">
                                       <input
                                         type="checkbox"
                                         checked={secureIdActive}
                                         onChange={(e) => setSecureIdActive(e.target.checked)}
-                                        className="h-4 w-4"
+                                        className="h-4 w-4 accent-blue-600"
                                       />
-                                      Enable Secure ID Range
+                                      <span className="font-semibold">Enable Secure ID</span>
                                     </Label>
-                                    <Badge variant={secureIdActive ? "destructive" : "outline"}>{secureIdActive ? "Active" : "Inactive"}</Badge>
+                                    <Badge variant={secureIdActive ? "destructive" : "outline"}>
+                                      {secureIdActive ? "🔴 ACTIVE" : "Inactive"}
+                                    </Badge>
                                   </div>
-                                  {secureIdActive && (
-                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                                      <Label>Secure ID Code</Label>
-                                      <Input
-                                        value={secureIdCode}
-                                        onChange={(e) => setSecureIdCode(e.target.value)}
-                                        placeholder="Enter Secure ID Code"
-                                      />
+
+                                  {/* Current code display — always visible */}
+                                  {secureIdCode && (
+                                    <div className="flex items-center justify-between bg-white border border-blue-200 rounded-md px-3 py-2">
+                                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Current Code</span>
+                                      <span className="font-mono font-bold text-blue-700 text-sm tracking-widest">{secureIdCode}</span>
                                     </div>
                                   )}
+
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">{secureIdCode ? "Update Secure ID Code" : "Set Secure ID Code"}</Label>
+                                    <Input
+                                      value={secureIdCode}
+                                      onChange={(e) => setSecureIdCode(e.target.value)}
+                                      placeholder="Enter Secure ID Code"
+                                    />
+                                  </div>
                                 </div>
 
-                                <Button className="w-full" onClick={handleSaveSecurity}>
+                                <Button className="w-full bg-gray-900 hover:bg-gray-800" onClick={handleSaveSecurity}>
                                   Save Security Settings
                                 </Button>
                               </div>

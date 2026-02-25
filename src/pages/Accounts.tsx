@@ -145,9 +145,6 @@ const Accounts = () => {
                     onCopy={() => copyToClipboard(account.account_number, account.id + "_ach")}
                     copied={copiedId === account.id + "_ach"}
                   />
-                  <div className="flex justify-between items-center pt-1 text-xs text-gray-400">
-                    <span>Opened {new Date(account.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                  </div>
 
                   {/* Quick actions */}
                   <div className="grid grid-cols-2 gap-2 pt-2">
