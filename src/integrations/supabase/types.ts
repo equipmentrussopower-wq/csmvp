@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_number: string
+          account_type: Database["public"]["Enums"]["account_type"]
+          balance: number
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["account_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_number: string
+          account_type?: Database["public"]["Enums"]["account_type"]
+          balance?: number
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["account_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_number?: string
+          account_type?: Database["public"]["Enums"]["account_type"]
+          balance?: number
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["account_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cards: {
         Row: {
           account_id: string
@@ -61,54 +94,84 @@ export type Database = {
           },
         ]
       }
-      platform_settings: {
+      kyc_submissions: {
         Row: {
-          key: string
-          updated_at: string
-          value: string
+          address: string
+          date_of_birth: string
+          full_name: string
+          id: string
+          id_image_url: string | null
+          id_number: string
+          id_type: string
+          phone: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["kyc_status"]
+          submitted_at: string
+          user_id: string
         }
         Insert: {
-          key: string
-          updated_at?: string
-          value: string
+          address: string
+          date_of_birth: string
+          full_name: string
+          id?: string
+          id_image_url?: string | null
+          id_number: string
+          id_type: string
+          phone: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          submitted_at?: string
+          user_id: string
         }
         Update: {
-          key?: string
-          updated_at?: string
-          value?: string
+          address?: string
+          date_of_birth?: string
+          full_name?: string
+          id?: string
+          id_image_url?: string | null
+          id_number?: string
+          id_type?: string
+          phone?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          submitted_at?: string
+          user_id?: string
         }
         Relationships: []
       }
-      accounts: {
+      notifications: {
         Row: {
-          account_number: string
-          account_type: Database["public"]["Enums"]["account_type"]
-          balance: number
+          body: string
           created_at: string
           id: string
-          status: Database["public"]["Enums"]["account_status"]
-          updated_at: string
-          user_id: string
+          is_read: boolean
+          title: string
+          type: string
+          user_id: string | null
         }
         Insert: {
-          account_number: string
-          account_type?: Database["public"]["Enums"]["account_type"]
-          balance?: number
+          body: string
           created_at?: string
           id?: string
-          status?: Database["public"]["Enums"]["account_status"]
-          updated_at?: string
-          user_id: string
+          is_read?: boolean
+          title: string
+          type?: string
+          user_id?: string | null
         }
         Update: {
-          account_number?: string
-          account_type?: Database["public"]["Enums"]["account_type"]
-          balance?: number
+          body?: string
           created_at?: string
           id?: string
-          status?: Database["public"]["Enums"]["account_status"]
-          updated_at?: string
-          user_id?: string
+          is_read?: boolean
+          title?: string
+          type?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -139,45 +202,63 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
+          cot_code: string | null
           created_at: string
           full_name: string
           id: string
+          is_cot_active: boolean
+          is_secure_id_active: boolean
           phone: string | null
+          secure_id_code: string | null
           updated_at: string
           user_id: string
-          is_cot_active: boolean
-          cot_code: string | null
-          is_secure_id_active: boolean
-          secure_id_code: string | null
         }
         Insert: {
           address?: string | null
+          cot_code?: string | null
           created_at?: string
           full_name: string
           id?: string
+          is_cot_active?: boolean
+          is_secure_id_active?: boolean
           phone?: string | null
+          secure_id_code?: string | null
           updated_at?: string
           user_id: string
-          is_cot_active?: boolean
-          cot_code?: string | null
-          is_secure_id_active?: boolean
-          secure_id_code?: string | null
         }
         Update: {
           address?: string | null
+          cot_code?: string | null
           created_at?: string
           full_name?: string
           id?: string
+          is_cot_active?: boolean
+          is_secure_id_active?: boolean
           phone?: string | null
+          secure_id_code?: string | null
           updated_at?: string
           user_id?: string
-          is_cot_active?: boolean
-          cot_code?: string | null
-          is_secure_id_active?: boolean
-          secure_id_code?: string | null
         }
         Relationships: []
       }
@@ -232,6 +313,30 @@ export type Database = {
           },
         ]
       }
+      user_pins: {
+        Row: {
+          created_at: string
+          id: string
+          pin_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pin_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pin_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -250,116 +355,12 @@ export type Database = {
         }
         Relationships: []
       }
-      kyc_submissions: {
-        Row: {
-          id: string
-          user_id: string
-          full_name: string
-          date_of_birth: string
-          address: string
-          phone: string
-          id_type: string
-          id_number: string
-          status: Database["public"]["Enums"]["kyc_status"]
-          rejection_reason: string | null
-          submitted_at: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          id_image_url: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          full_name: string
-          date_of_birth: string
-          address: string
-          phone: string
-          id_type: string
-          id_number: string
-          status?: Database["public"]["Enums"]["kyc_status"]
-          rejection_reason?: string | null
-          submitted_at?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          id_image_url?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          full_name?: string
-          date_of_birth?: string
-          address?: string
-          phone?: string
-          id_type?: string
-          id_number?: string
-          status?: Database["public"]["Enums"]["kyc_status"]
-          rejection_reason?: string | null
-          submitted_at?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          id_image_url?: string | null
-        }
-        Relationships: []
-      }
-      user_pins: {
-        Row: {
-          id: string
-          user_id: string
-          pin_hash: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          pin_hash: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          pin_hash?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      notifications: {
-        Row: {
-          body: string
-          created_at: string
-          id: string
-          is_read: boolean
-          title: string
-          type: string
-          user_id: string | null
-        }
-        Insert: {
-          body: string
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          title: string
-          type?: string
-          user_id?: string | null
-        }
-        Update: {
-          body?: string
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          title?: string
-          type?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_activate_card: { Args: { p_card_id: string }; Returns: undefined }
       admin_adjust_balance: {
         Args: {
           p_account_id: string
@@ -368,6 +369,15 @@ export type Database = {
           p_type: Database["public"]["Enums"]["transaction_type"]
         }
         Returns: string
+      }
+      admin_approve_kyc: { Args: { p_user_id: string }; Returns: undefined }
+      admin_approve_transaction: {
+        Args: { p_transaction_id: string }
+        Returns: undefined
+      }
+      admin_cancel_transaction: {
+        Args: { p_transaction_id: string }
+        Returns: undefined
       }
       admin_reverse_transaction: {
         Args: { p_transaction_id: string }
@@ -381,12 +391,17 @@ export type Database = {
         Returns: undefined
       }
       generate_account_number: { Args: never; Returns: string }
+      generate_card_number: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      request_debit_card: {
+        Args: { p_account_id: string; p_type?: string }
+        Returns: string
       }
       transfer_funds: {
         Args: {
@@ -397,39 +412,35 @@ export type Database = {
         }
         Returns: string
       }
-      admin_approve_kyc: {
-        Args: { p_user_id: string }
-        Returns: undefined
+      transfer_with_pin:
+        | {
+            Args: {
+              p_amount: number
+              p_narration?: string
+              p_pin_hash: string
+              p_receiver_account_id: string
+              p_sender_account_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_cot_code?: string
+              p_narration?: string
+              p_pin_hash: string
+              p_receiver_account_id: string
+              p_secure_id_code?: string
+              p_sender_account_id: string
+            }
+            Returns: string
+          }
+      verify_cot_code: { Args: { p_cot_code: string }; Returns: boolean }
+      verify_secure_id_code: {
+        Args: { p_secure_id_code: string }
+        Returns: boolean
       }
-      admin_reject_kyc: {
-        Args: { p_user_id: string; p_reason?: string }
-        Returns: undefined
-      }
-      transfer_with_pin: {
-        Args: {
-          p_sender_account_id: string
-          p_receiver_account_id: string
-          p_amount: number
-          p_pin_hash: string
-          p_narration?: string
-          p_cot_code?: string
-          p_secure_id_code?: string
-        }
-        Returns: string
-      }
-      request_debit_card: {
-        Args: {
-          p_account_id: string
-          p_type?: string
-        }
-        Returns: string
-      }
-      admin_activate_card: {
-        Args: {
-          p_card_id: string
-        }
-        Returns: void
-      }
+      verify_user_pin: { Args: { p_pin_hash: string }; Returns: boolean }
     }
     Enums: {
       account_status: "active" | "frozen"
@@ -451,116 +462,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
