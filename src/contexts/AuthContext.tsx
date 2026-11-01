@@ -59,14 +59,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAdmin(!!data);
   };
 
+  const loadUserData = async (userId: string) => {
+    await Promise.all([
+      fetchProfile(userId),
+      checkAdmin(userId),
+      checkKyc(userId)
+    ]);
+  };
+
   const refreshAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      await Promise.all([
-        fetchProfile(session.user.id),
-        checkAdmin(session.user.id),
-        checkKyc(session.user.id)
-      ]);
+      await loadUserData(session.user.id);
     }
   };
 
@@ -76,24 +80,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        fetchProfile(session.user.id);
-        checkAdmin(session.user.id);
-        checkKyc(session.user.id);
+        // Keep isLoading true until role/profile/KYC checks finish,
+        // so route guards never decide with isAdmin still unset.
+        loadUserData(session.user.id).finally(() => setIsLoading(false));
       } else {
         setProfile(null);
         setIsAdmin(false);
         setKycStatus("none");
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
-        checkAdmin(session.user.id);
-        checkKyc(session.user.id);
+        await loadUserData(session.user.id);
       }
       setIsLoading(false);
     });
