@@ -6,9 +6,8 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: {
-    user_id: any;
-    user_id: any; full_name: string; phone: string | null; address: string | null 
-} | null;
+    user_id: string; full_name: string; phone: string | null; address: string | null
+  } | null;
   kycStatus: "pending" | "approved" | "rejected" | "none";
   isAdmin: boolean;
   isLoading: boolean;
@@ -40,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, phone, address")
+      .select("user_id, full_name, phone, address")
       .eq("user_id", userId)
       .maybeSingle();
     setProfile(data);

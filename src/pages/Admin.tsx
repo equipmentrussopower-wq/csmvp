@@ -252,14 +252,17 @@ const Admin = () => {
     if (!selectedUserForSecurity) return;
     const { error, count } = await supabase
       .from("profiles")
-      .update({
-        is_cot_active: cotActive,
-        cot_code: cotCode || null,
-        is_secure_id_active: secureIdActive,
-        secure_id_code: secureIdCode || null,
-      })
+      .update(
+        {
+          is_cot_active: cotActive,
+          cot_code: cotCode || null,
+          is_secure_id_active: secureIdActive,
+          secure_id_code: secureIdCode || null,
+        },
+        { count: "exact" }
+      )
       .eq("id", selectedUserForSecurity.id)
-      .select("id", { count: "exact" });
+      .select("id");
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });

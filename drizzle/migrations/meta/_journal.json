@@ -8,6 +8,13 @@
       "when": 1793555153252,
       "tag": "0000_tighten_notification_settings_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793555188343,
+      "tag": "0001_add_admin_reject_kyc",
+      "breakpoints": true
     }
   ]
 }

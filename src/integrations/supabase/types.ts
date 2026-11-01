@@ -379,6 +379,10 @@ export type Database = {
         Args: { p_transaction_id: string }
         Returns: undefined
       }
+      admin_reject_kyc: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_reverse_transaction: {
         Args: { p_transaction_id: string }
         Returns: string
